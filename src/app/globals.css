@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root {
+  --bg-canvas: #fafafa;
+  --bg-surface: #ffffff;
+  --bg-well: #f4f4f3;
+  --border-hairline: #e5e5e5;
+  --border-strong: #111111;
+  --ink-primary: #111111;
+  --ink-secondary: #525252;
+  --ink-muted: #6b6b6b;
+}
+
+@layer base {
+  html {
+    background-color: var(--bg-canvas);
+    color: var(--ink-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--ink-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    caret-color: var(--ink-primary);
+  }
+
+  ::selection {
+    background-color: #111111;
+    color: #fafafa;
+  }
+
+  :focus-visible {
+    outline: 1.5px solid #111111;
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg-canvas);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d4d4d4;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #a3a3a3;
+  }
+}
+
+.cutout-checkerboard {
+  background-color: #ffffff;
+  background-image: conic-gradient(
+    #efefef 90deg,
+    #ffffff 90deg 180deg,
+    #efefef 180deg 270deg,
+    #ffffff 270deg
+  );
+  background-size: 16px 16px;
+}
+
+.wordmark {
+  letter-spacing: 0.26em;
+}
