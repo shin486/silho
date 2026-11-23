@@ -542,7 +542,7 @@ export function BodyProfileModal({
               },
             });
 
-            setProcessingLabel("Compositing #FAFAFA studio backdrop…");
+            setProcessingLabel("Compositing studio backdrop…");
             finalAvatarUrl = await composeStudioCutoutAvatar(cutoutBlob);
           } else {
             finalAvatarUrl = croppedOriginalJpeg;
@@ -584,7 +584,7 @@ export function BodyProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#111111]/45 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0E0E0E]/45 p-4 backdrop-blur-[2px]"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           handleClose();
@@ -595,19 +595,19 @@ export function BodyProfileModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="body-profile-title"
-        className="flex max-h-[92vh] w-full max-w-[840px] flex-col overflow-hidden border border-[#E5E5E5] bg-white shadow-[0_24px_60px_rgba(17,17,17,0.16)]"
+        className="flex max-h-[92vh] w-full max-w-[840px] flex-col overflow-hidden border border-[#E2E0DA] bg-white shadow-[0_24px_60px_rgba(14,14,14,0.16)]"
       >
         {/* Header + Tabs */}
-        <div className="border-b border-[#E5E5E5] px-6 pt-4">
+        <div className="border-b border-[#E2E0DA] px-6 pt-4">
           <div className="flex items-start justify-between gap-4 pb-3.5">
             <div>
               <h2
                 id="body-profile-title"
-                className="text-[15px] font-medium text-[#111111]"
+                className="text-[16px] font-medium tracking-[-0.02em] text-[#0E0E0E]"
               >
                 {initialProfile ? "Edit Body Profile" : "Set Up Body Profile"}
               </h2>
-              <p className="mt-0.5 text-[12px] text-[#525252]">
+              <p className="mt-0.5 text-[12px] text-[#4A4945]">
                 Frame your own 3:4 portrait or choose a preset studio model.
               </p>
             </div>
@@ -616,7 +616,7 @@ export function BodyProfileModal({
               onClick={handleClose}
               disabled={isSaving}
               aria-label="Close modal"
-              className="flex h-8 w-8 items-center justify-center border border-transparent text-[#525252] transition-colors hover:border-[#E5E5E5] hover:text-[#111111] disabled:opacity-40"
+              className="flex h-8 w-8 items-center justify-center border border-transparent text-[#4A4945] transition-colors hover:border-[#E2E0DA] hover:text-[#0E0E0E] disabled:opacity-40"
             >
               <X className="h-4 w-4" />
             </button>
@@ -633,15 +633,15 @@ export function BodyProfileModal({
               aria-selected={activeTab === "upload"}
               onClick={() => handleSwitchTab("upload")}
               disabled={isSaving}
-              className={`relative pb-2.5 text-[12px] font-medium transition-colors ${
+              className={`relative pb-2.5 text-[12px] font-medium transition-colors disabled:opacity-40 ${
                 activeTab === "upload"
-                  ? "text-[#111111]"
-                  : "text-[#6B6B6B] hover:text-[#111111]"
+                  ? "text-[#0E0E0E]"
+                  : "text-[#6C6A64] hover:text-[#0E0E0E]"
               }`}
             >
               Upload My Photo
               {activeTab === "upload" && (
-                <span className="absolute inset-x-0 bottom-0 h-[1.5px] bg-[#111111]" />
+                <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#0E0E0E]" />
               )}
             </button>
             <button
@@ -650,15 +650,15 @@ export function BodyProfileModal({
               aria-selected={activeTab === "presets"}
               onClick={() => handleSwitchTab("presets")}
               disabled={isSaving}
-              className={`relative pb-2.5 text-[12px] font-medium transition-colors ${
+              className={`relative pb-2.5 text-[12px] font-medium transition-colors disabled:opacity-40 ${
                 activeTab === "presets"
-                  ? "text-[#111111]"
-                  : "text-[#6B6B6B] hover:text-[#111111]"
+                  ? "text-[#0E0E0E]"
+                  : "text-[#6C6A64] hover:text-[#0E0E0E]"
               }`}
             >
               Preset Models
               {activeTab === "presets" && (
-                <span className="absolute inset-x-0 bottom-0 h-[1.5px] bg-[#111111]" />
+                <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#0E0E0E]" />
               )}
             </button>
           </div>
@@ -670,7 +670,7 @@ export function BodyProfileModal({
           className="grid grid-cols-1 overflow-y-auto md:grid-cols-12"
         >
           {/* Left Panel: Upload Cropper OR Preset Models */}
-          <div className="border-b border-[#E5E5E5] bg-[#FAFAFA] p-6 md:col-span-7 md:border-r md:border-b-0">
+          <div className="border-b border-[#E2E0DA] bg-[#F9F8F6] p-6 md:col-span-7 md:border-r md:border-b-0">
             <input
               ref={fileInputRef}
               type="file"
@@ -682,8 +682,7 @@ export function BodyProfileModal({
             {activeTab === "upload" ? (
               cropSourceUrl ? (
                 <div className="flex flex-col gap-3.5">
-                  {/* 3:4 Interactive Crop Container + Ghost Silhouette SVG */}
-                  <div className="relative mx-auto aspect-[3/4] w-full max-w-[330px] overflow-hidden border border-[#E5E5E5] bg-[#1A1A1A]">
+                  <div className="relative mx-auto aspect-[3/4] w-full max-w-[330px] overflow-hidden border border-[#E2E0DA] bg-[#0E0E0E]">
                     <Cropper
                       image={cropSourceUrl}
                       crop={crop}
@@ -699,24 +698,29 @@ export function BodyProfileModal({
                       }
                     />
 
-                    {/* Faint non-interactive Ghost Silhouette guide aligned 1:1 with the 3:4 crop frame */}
                     <GhostSilhouetteOverlay />
 
+                    <div className="pointer-events-none absolute inset-x-2.5 bottom-2.5 z-10 flex justify-center">
+                      <span className="border border-white/20 bg-[#0E0E0E]/80 px-2.5 py-1 text-center text-[10px] font-medium tracking-[0.01em] text-white backdrop-blur-[2px]">
+                        Fill the frame head-to-knees for sharpest fabric detail.
+                      </span>
+                    </div>
+
                     {isSaving && (
-                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/85 px-6 text-center backdrop-blur-[2px]">
-                        <Loader2 className="h-5 w-5 animate-spin text-[#111111]" />
-                        <p className="mt-3 text-[13px] font-medium text-[#111111]">
+                      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#F9F8F6]/85 px-6 text-center backdrop-blur-[2px]">
+                        <Loader2 className="h-5 w-5 animate-spin text-[#0E0E0E]" />
+                        <p className="mt-3 text-[13px] font-medium text-[#0E0E0E]">
                           {processingLabel || "Processing portrait…"}
                         </p>
                         {processingPercent !== null && (
                           <div className="mt-3 w-40">
-                            <div className="h-[2px] w-full overflow-hidden bg-[#E5E5E5]">
+                            <div className="h-[2px] w-full overflow-hidden bg-[#E2E0DA]">
                               <div
-                                className="h-full bg-[#111111] transition-[width] duration-200"
+                                className="h-full bg-[#0E0E0E] transition-[width] duration-200"
                                 style={{ width: `${processingPercent}%` }}
                               />
                             </div>
-                            <p className="mt-1.5 text-[11px] text-[#525252] tabular-nums">
+                            <p className="mt-1.5 text-[11px] text-[#4A4945] tabular-nums">
                               {processingPercent}%
                             </p>
                           </div>
@@ -727,7 +731,7 @@ export function BodyProfileModal({
 
                   {/* Zoom Slider + Replace */}
                   <div className="mx-auto flex w-full max-w-[330px] items-center gap-3">
-                    <ZoomIn className="h-3.5 w-3.5 shrink-0 text-[#525252]" />
+                    <ZoomIn className="h-3.5 w-3.5 shrink-0 text-[#4A4945]" />
                     <input
                       type="range"
                       aria-label="Zoom photo"
@@ -739,16 +743,16 @@ export function BodyProfileModal({
                       onChange={(e) =>
                         setZoom(Number.parseFloat(e.target.value))
                       }
-                      className="h-1 flex-1 cursor-pointer appearance-none bg-[#D4D4D4] accent-[#111111] disabled:opacity-40"
+                      className="h-1 flex-1 cursor-pointer appearance-none bg-[#C8C5BD] accent-[#0E0E0E] disabled:opacity-40"
                     />
-                    <span className="w-9 text-right text-[11px] text-[#525252] tabular-nums">
+                    <span className="w-9 text-right text-[11px] text-[#4A4945] tabular-nums">
                       {zoom.toFixed(1)}×
                     </span>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isSaving}
-                      className="inline-flex h-7 items-center gap-1 border border-[#E5E5E5] bg-white px-2 text-[11px] font-medium text-[#111111] transition-colors hover:border-[#111111] disabled:opacity-40"
+                      className="inline-flex h-7 items-center gap-1 border border-[#E2E0DA] bg-white px-2 text-[11px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E] disabled:opacity-40"
                     >
                       <ImagePlus className="h-3 w-3" />
                       <span>Replace</span>
@@ -757,52 +761,52 @@ export function BodyProfileModal({
 
                   {/* Background Processing Toggle */}
                   <div className="mx-auto w-full max-w-[330px]">
-                    <span className="mb-1.5 block text-[11px] font-medium text-[#525252]">
+                    <span className="mb-1.5 block text-[10px] font-medium tracking-[0.12em] text-[#6C6A64] uppercase">
                       Background handling on save
                     </span>
                     <div
                       role="group"
                       aria-label="Background mode"
-                      className="grid grid-cols-2 border border-[#E5E5E5] bg-white p-0.5"
+                      className="grid grid-cols-2 border border-[#E2E0DA] bg-white p-0.5"
                     >
                       <button
                         type="button"
                         onClick={() => setBackgroundMode("original")}
                         disabled={isSaving}
-                        className={`flex h-8 items-center justify-center px-2 text-[11px] font-medium transition-colors ${
+                        className={`flex h-8 items-center justify-center px-2 text-[11px] font-medium transition-colors disabled:opacity-40 ${
                           backgroundMode === "original"
-                            ? "bg-[#111111] text-white"
-                            : "text-[#525252] hover:text-[#111111]"
+                            ? "bg-[#0E0E0E] text-white"
+                            : "text-[#4A4945] hover:text-[#0E0E0E]"
                         }`}
                       >
-                        Keep Original Background
+                        Keep Original Scene
                       </button>
                       <button
                         type="button"
                         onClick={() => setBackgroundMode("cutout")}
                         disabled={isSaving}
-                        className={`flex h-8 items-center justify-center gap-1 px-2 text-[11px] font-medium transition-colors ${
+                        className={`flex h-8 items-center justify-center gap-1 px-2 text-[11px] font-medium transition-colors disabled:opacity-40 ${
                           backgroundMode === "cutout"
-                            ? "bg-[#111111] text-white"
-                            : "text-[#525252] hover:text-[#111111]"
+                            ? "bg-[#0E0E0E] text-white"
+                            : "text-[#4A4945] hover:text-[#0E0E0E]"
                         }`}
                       >
                         <Scissors className="h-3 w-3" />
-                        <span>Studio Cutout (#FAFAFA)</span>
+                        <span>Studio Backdrop</span>
                       </button>
                     </div>
                   </div>
                 </div>
               ) : savedCustomAvatarUrl ? (
                 <div className="mx-auto flex w-full max-w-[330px] flex-col gap-3">
-                  <div className="relative flex aspect-[3/4] w-full items-center justify-center overflow-hidden border border-[#E5E5E5] bg-[#FAFAFA]">
+                  <div className="relative flex aspect-[3/4] w-full items-center justify-center overflow-hidden border border-[#E2E0DA] bg-[#F2F1ED]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={savedCustomAvatarUrl}
                       alt="Current saved Body Profile portrait"
                       className="h-full w-full object-contain"
                     />
-                    <span className="absolute top-2.5 left-2.5 border border-[#E5E5E5] bg-white/95 px-2 py-0.5 text-[10px] font-medium tracking-[0.06em] text-[#525252] uppercase">
+                    <span className="absolute top-2.5 left-2.5 border border-[#E2E0DA] bg-white/95 px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[#4A4945] uppercase">
                       Current 3:4 Portrait
                     </span>
                   </div>
@@ -810,7 +814,7 @@ export function BodyProfileModal({
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isSaving}
-                    className="inline-flex h-8 w-full items-center justify-center gap-1.5 border border-[#E5E5E5] bg-white px-3 text-[12px] font-medium text-[#111111] transition-colors hover:border-[#111111] disabled:opacity-40"
+                    className="inline-flex h-9 w-full items-center justify-center gap-1.5 border border-[#E2E0DA] bg-white px-3 text-[12px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E] disabled:opacity-40"
                   >
                     <ImagePlus className="h-3.5 w-3.5" />
                     <span>Upload &amp; Re-frame New Photo</span>
@@ -836,17 +840,17 @@ export function BodyProfileModal({
                     }}
                     className={`flex aspect-[3/4] w-full cursor-pointer flex-col items-center justify-center border border-dashed px-6 text-center transition-colors ${
                       isDragging
-                        ? "border-[#111111] bg-[#F4F4F3]"
-                        : "border-[#CCCCCC] bg-white hover:border-[#111111]"
+                        ? "border-[#0E0E0E] bg-[#F2F1ED]"
+                        : "border-[#C8C5BD] bg-white hover:border-[#0E0E0E]"
                     }`}
                   >
-                    <div className="flex h-11 w-11 items-center justify-center border border-[#E5E5E5] bg-[#FAFAFA] text-[#111111]">
+                    <div className="flex h-11 w-11 items-center justify-center border border-[#E2E0DA] bg-[#F2F1ED] text-[#0E0E0E]">
                       <Upload className="h-4 w-4" strokeWidth={1.5} />
                     </div>
-                    <p className="mt-4 text-[13px] font-medium text-[#111111]">
+                    <p className="mt-4 text-[13px] font-medium text-[#0E0E0E]">
                       Upload full-body photo
                     </p>
-                    <p className="mt-1 max-w-[26ch] text-[12px] leading-relaxed text-[#525252]">
+                    <p className="mt-1 max-w-[26ch] text-[12px] leading-relaxed text-[#4A4945]">
                       Drag and zoom inside our 3:4 ghost guide before saving.
                     </p>
                   </div>
@@ -855,7 +859,7 @@ export function BodyProfileModal({
             ) : (
               /* Tab B: Preset Studio Models */
               <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 border-t border-l border-[#E2E0DA] sm:grid-cols-3">
                   {PRESET_MODELS.map((model) => {
                     const isSelected = selectedPresetUrl === model.avatarUrl;
                     return (
@@ -864,13 +868,15 @@ export function BodyProfileModal({
                         type="button"
                         onClick={() => handleSelectPreset(model)}
                         disabled={isSaving}
-                        className={`group flex flex-col border text-left transition-colors ${
-                          isSelected
-                            ? "border-[#111111] bg-white"
-                            : "border-[#E5E5E5] bg-white hover:border-[#A3A3A3]"
-                        }`}
+                        className="group relative flex flex-col border-r border-b border-[#E2E0DA] bg-white text-left transition-colors hover:bg-[#F9F8F6] disabled:opacity-40"
                       >
-                        <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#F4F4F3]">
+                        {isSelected && (
+                          <span
+                            aria-hidden="true"
+                            className="pointer-events-none absolute inset-0 z-10 border-[1.5px] border-[#0E0E0E]"
+                          />
+                        )}
+                        <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#F2F1ED]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={model.avatarUrl}
@@ -878,16 +884,16 @@ export function BodyProfileModal({
                             className="h-full w-full object-cover object-top"
                           />
                           {isSelected && (
-                            <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center bg-[#111111] text-white">
+                            <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center bg-[#0E0E0E] text-white">
                               <Check className="h-3 w-3" />
                             </span>
                           )}
                         </div>
-                        <div className="border-t border-[#E5E5E5] p-2.5">
-                          <div className="text-[12px] font-medium text-[#111111]">
+                        <div className="border-t border-[#E2E0DA] p-2.5">
+                          <div className="text-[12px] font-medium text-[#0E0E0E]">
                             {model.name}
                           </div>
-                          <div className="mt-0.5 text-[10px] leading-snug text-[#525252] tabular-nums">
+                          <div className="mt-0.5 text-[10px] leading-snug text-[#4A4945] tabular-nums">
                             {model.summary}
                           </div>
                         </div>
@@ -895,7 +901,7 @@ export function BodyProfileModal({
                     );
                   })}
                 </div>
-                <p className="text-[11px] leading-relaxed text-[#6B6B6B]">
+                <p className="text-[11px] leading-relaxed text-[#6C6A64]">
                   Front-facing 3:4 studio models pre-calibrated for clean
                   garment draping.
                 </p>
@@ -903,7 +909,7 @@ export function BodyProfileModal({
             )}
 
             {activeTab === "upload" && (
-              <p className="mx-auto mt-3 max-w-[330px] text-[11px] leading-relaxed text-[#6B6B6B]">
+              <p className="mx-auto mt-3 max-w-[330px] text-[11px] leading-relaxed text-[#6C6A64]">
                 Stand facing forward in even indoor lighting for the cleanest
                 fit.
               </p>
@@ -917,9 +923,9 @@ export function BodyProfileModal({
                 <div>
                   <label
                     htmlFor="profile-height"
-                    className="mb-1.5 block text-[12px] font-medium text-[#111111]"
+                    className="mb-2 block text-[11px] font-medium tracking-[0.1em] text-[#4A4945] uppercase"
                   >
-                    Height (cm)
+                    Height
                   </label>
                   <div className="relative flex items-center">
                     <input
@@ -933,9 +939,9 @@ export function BodyProfileModal({
                       onChange={(e) => setHeightInput(e.target.value)}
                       placeholder="172"
                       disabled={isSaving}
-                      className="h-10 w-full border border-[#E5E5E5] bg-white pr-9 pl-3 text-[14px] text-[#111111] tabular-nums placeholder:text-[#737373] transition-colors focus:border-[#111111] focus:outline-none disabled:bg-[#FAFAFA]"
+                      className="h-11 w-full border border-[#E2E0DA] bg-white pr-9 pl-3.5 text-[14px] text-[#0E0E0E] tabular-nums placeholder:text-[#6C6A64] transition-colors focus:border-[#0E0E0E] disabled:bg-[#F9F8F6]"
                     />
-                    <span className="pointer-events-none absolute right-3 text-[12px] text-[#6B6B6B]">
+                    <span className="pointer-events-none absolute right-3 text-[12px] text-[#6C6A64]">
                       cm
                     </span>
                   </div>
@@ -944,9 +950,9 @@ export function BodyProfileModal({
                 <div>
                   <label
                     htmlFor="profile-weight"
-                    className="mb-1.5 block text-[12px] font-medium text-[#111111]"
+                    className="mb-2 block text-[11px] font-medium tracking-[0.1em] text-[#4A4945] uppercase"
                   >
-                    Weight (kg)
+                    Weight
                   </label>
                   <div className="relative flex items-center">
                     <input
@@ -960,9 +966,9 @@ export function BodyProfileModal({
                       onChange={(e) => setWeightInput(e.target.value)}
                       placeholder="59"
                       disabled={isSaving}
-                      className="h-10 w-full border border-[#E5E5E5] bg-white pr-9 pl-3 text-[14px] text-[#111111] tabular-nums placeholder:text-[#737373] transition-colors focus:border-[#111111] focus:outline-none disabled:bg-[#FAFAFA]"
+                      className="h-11 w-full border border-[#E2E0DA] bg-white pr-9 pl-3.5 text-[14px] text-[#0E0E0E] tabular-nums placeholder:text-[#6C6A64] transition-colors focus:border-[#0E0E0E] disabled:bg-[#F9F8F6]"
                     />
-                    <span className="pointer-events-none absolute right-3 text-[12px] text-[#6B6B6B]">
+                    <span className="pointer-events-none absolute right-3 text-[12px] text-[#6C6A64]">
                       kg
                     </span>
                   </div>
@@ -970,7 +976,7 @@ export function BodyProfileModal({
               </div>
 
               <div>
-                <span className="mb-1.5 block text-[12px] font-medium text-[#111111]">
+                <span className="mb-2 block text-[11px] font-medium tracking-[0.1em] text-[#4A4945] uppercase">
                   Preferred Fit
                 </span>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -982,10 +988,10 @@ export function BodyProfileModal({
                         type="button"
                         onClick={() => setPreferredFit(fit)}
                         disabled={isSaving}
-                        className={`h-9 border px-2 text-[12px] font-medium transition-colors ${
+                        className={`h-9 border px-2 text-[12px] font-medium transition-colors disabled:opacity-40 ${
                           selected
-                            ? "border-[#111111] bg-[#111111] text-white"
-                            : "border-[#E5E5E5] bg-white text-[#525252] hover:border-[#111111] hover:text-[#111111]"
+                            ? "border-[#0E0E0E] bg-[#0E0E0E] text-white"
+                            : "border-[#E2E0DA] bg-white text-[#4A4945] hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
                         }`}
                       >
                         {PREFERRED_FIT_LABELS[fit]}
@@ -993,15 +999,15 @@ export function BodyProfileModal({
                     );
                   })}
                 </div>
-                <p className="mt-2 text-[11px] leading-relaxed text-[#6B6B6B]">
+                <p className="mt-2 text-[11px] leading-relaxed text-[#6C6A64]">
                   Saved on your silhouette ledger for sizing reference.
                 </p>
               </div>
 
               {activeTab === "upload" && cropSourceUrl && (
-                <div className="border border-[#E5E5E5] bg-[#FAFAFA] px-3 py-2.5 text-[11px] leading-relaxed text-[#525252]">
+                <div className="border border-[#E2E0DA] bg-[#F9F8F6] px-3.5 py-2.5 text-[11px] leading-relaxed text-[#4A4945]">
                   {backgroundMode === "cutout"
-                    ? "Saves a 768×1024 JPEG after stripping the background onto #FAFAFA locally."
+                    ? "Saves a 768×1024 JPEG after stripping the background onto a clean studio backdrop locally."
                     : "Saves a 768×1024 cropped JPEG with your original background preserved."}
                 </div>
               )}
@@ -1009,7 +1015,7 @@ export function BodyProfileModal({
               {error && (
                 <div
                   role="alert"
-                  className="flex flex-col gap-2 border border-[#DC2626]/30 bg-[#FEF2F2] px-3 py-2.5 text-[12px] leading-snug text-[#991B1B]"
+                  className="flex flex-col gap-2 border border-[#D9B4B2] bg-[#FAF2F2] px-3.5 py-2.5 text-[12px] leading-snug text-[#8C1D18]"
                 >
                   <span>{error}</span>
                   {fallbackAvatarDataUrl && (
@@ -1018,7 +1024,7 @@ export function BodyProfileModal({
                         type="button"
                         onClick={() => void handleUseOriginalFallback()}
                         disabled={isSaving}
-                        className="inline-flex h-7 items-center bg-[#111111] px-2.5 text-[11px] font-medium text-white transition-colors hover:bg-[#262626] disabled:opacity-40"
+                        className="inline-flex h-7 items-center bg-[#0E0E0E] px-2.5 text-[11px] font-medium text-white transition-colors hover:bg-[#2B2B29] disabled:opacity-40"
                       >
                         Use Original Photo
                       </button>
@@ -1028,19 +1034,19 @@ export function BodyProfileModal({
               )}
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-[#E5E5E5] pt-4">
+            <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-[#E2E0DA] pt-4">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={isSaving}
-                className="h-9 border border-[#E5E5E5] bg-white px-4 text-[12px] font-medium text-[#525252] transition-colors hover:border-[#111111] hover:text-[#111111] disabled:opacity-40"
+                className="h-10 border border-[#E2E0DA] bg-white px-4 text-[12px] font-medium text-[#4A4945] transition-colors hover:border-[#0E0E0E] hover:text-[#0E0E0E] disabled:opacity-40"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="inline-flex h-9 items-center gap-2 bg-[#111111] px-4 text-[12px] font-medium text-white transition-colors hover:bg-[#262626] disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-10 items-center gap-2 bg-[#0E0E0E] px-5 text-[12px] font-medium text-white transition-colors hover:bg-[#2B2B29] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isSaving ? (
                   <>
@@ -1087,7 +1093,7 @@ function GhostSilhouetteOverlay() {
 
         {/* Soft dark halo stroke underneath so the outline stays visible on white walls */}
         <g
-          stroke="rgba(17,17,17,0.35)"
+          stroke="rgba(14,14,14,0.35)"
           strokeWidth="2.5"
           strokeDasharray="4 4"
           strokeLinecap="round"

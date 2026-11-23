@@ -36,7 +36,7 @@ function parseIsoDateOnly(dateStr: string | null): Date | null {
 function formatLastWornLabel(lastWornDate: Date | null): string {
   const days = getDaysSinceLastWorn(lastWornDate);
   if (days === null) return "Unworn";
-  if (days === 0) return "Worn today";
+  if (days === 0) return "Today";
   if (days === 1) return "1d ago";
   return `${days}d ago`;
 }
@@ -87,11 +87,15 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
             0
           ) / pricedItems.length
         : 0;
+    const deadStockCount = items.filter((item) =>
+      isDeadStock(parseIsoDateOnly(item.lastWornDate))
+    ).length;
 
     return {
       totalValue,
       totalWears,
       averageCpw,
+      deadStockCount,
     };
   }, [items]);
 
@@ -140,7 +144,6 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
     const todayIso = new Date().toISOString().slice(0, 10);
     const previousItems = items;
 
-    // Optimistically reflect the wear increment and recalculated cost-per-wear.
     setItems((prev) =>
       prev.map((item) =>
         item.id === itemId
@@ -208,69 +211,87 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-[#111111]">
+    <div className="min-h-screen bg-[#F9F8F6] text-[#0E0E0E]">
       <Navbar
         userName={userName}
-        metricsSlot={
-          <div className="flex items-center gap-6 text-[12px]">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-[#6B6B6B]">Total Value</span>
-              <span className="font-medium text-[#111111] tabular-nums">
-                {formatPeso(metrics.totalValue)}
-              </span>
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-[#6B6B6B]">Avg. Cost / Wear</span>
-              <span className="font-medium text-[#111111] tabular-nums">
-                {formatPeso(metrics.averageCpw)}
-                <span className="font-normal text-[#6B6B6B]">/wear</span>
-              </span>
-            </div>
-          </div>
-        }
         actionSlot={
           <button
             type="button"
             onClick={() => setIsUploadOpen(true)}
-            className="inline-flex h-8 items-center gap-1.5 bg-[#111111] px-3 text-[12px] font-medium text-white transition-colors hover:bg-[#262626]"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap bg-[#0E0E0E] px-2.5 text-[12px] font-medium tracking-[0.02em] text-white transition-colors hover:bg-[#2B2B29] sm:px-3.5"
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Add Piece</span>
+            <Plus className="h-3.5 w-3.5" strokeWidth={1.8} />
+            <span className="sm:hidden">Add</span>
+            <span className="hidden sm:inline">Add Piece</span>
           </button>
         }
       />
 
-      {/* Sub-header ledger (mobile metrics + category filter pills + sort) */}
-      <div className="border-b border-[#E5E5E5] bg-white">
-        <div className="mx-auto max-w-[1400px] px-4 sm:px-6 lg:px-8">
-          {/* Compact metrics row visible below lg */}
-          <div className="grid grid-cols-3 divide-x divide-[#E5E5E5] border-b border-[#E5E5E5] py-3 lg:hidden">
-            <div className="pr-3">
-              <div className="text-[11px] text-[#6B6B6B]">Total Value</div>
-              <div className="mt-0.5 text-[14px] font-medium text-[#111111] tabular-nums">
-                {formatPeso(metrics.totalValue)}
-              </div>
+      {/* Editorial Architectural Ledger Header */}
+      <section
+        aria-label="Wardrobe ledger overview"
+        className="border-b border-[#E2E0DA] bg-white"
+      >
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
+          {/* Top Row: Identity + 4-Column Tabular Ledger */}
+          <div className="grid grid-cols-1 items-stretch border-b border-[#E2E0DA] lg:grid-cols-12">
+            <div className="flex items-baseline justify-between gap-4 py-5 lg:col-span-4 lg:flex-col lg:justify-center lg:border-r lg:border-[#E2E0DA] lg:py-6 lg:pr-8">
+              <h1 className="text-[22px] font-medium tracking-[-0.03em] text-[#0E0E0E] sm:text-[26px]">
+                Closet Archive
+              </h1>
+              <span className="text-[11px] font-medium tracking-[0.14em] text-[#6C6A64] uppercase tabular-nums lg:mt-1.5">
+                {items.length} {items.length === 1 ? "Piece" : "Pieces"} Cataloged
+              </span>
             </div>
-            <div className="px-3">
-              <div className="text-[11px] text-[#6B6B6B]">Avg. ₱ / Wear</div>
-              <div className="mt-0.5 text-[14px] font-medium text-[#111111] tabular-nums">
-                {formatPeso(metrics.averageCpw)}
+
+            <div className="grid grid-cols-2 border-t border-[#E2E0DA] sm:grid-cols-4 lg:col-span-8 lg:border-t-0">
+              <div className="border-r border-b border-[#E2E0DA] py-4 pr-4 sm:border-b-0 sm:px-5 lg:py-6 lg:pl-7">
+                <div className="text-[10px] font-medium tracking-[0.14em] text-[#6C6A64] uppercase">
+                  Total Archive
+                </div>
+                <div className="mt-1.5 text-[20px] leading-none font-semibold tracking-[-0.03em] text-[#0E0E0E] tabular-nums sm:text-[24px]">
+                  {formatPeso(metrics.totalValue)}
+                </div>
               </div>
-            </div>
-            <div className="pl-3">
-              <div className="text-[11px] text-[#6B6B6B]">Total Wears</div>
-              <div className="mt-0.5 text-[14px] font-medium text-[#111111] tabular-nums">
-                {metrics.totalWears}
+
+              <div className="border-b border-[#E2E0DA] py-4 pl-4 sm:border-r sm:border-b-0 sm:px-5 lg:py-6">
+                <div className="text-[10px] font-medium tracking-[0.14em] text-[#6C6A64] uppercase">
+                  Avg. Cost / Wear
+                </div>
+                <div className="mt-1.5 flex items-baseline gap-1 text-[20px] leading-none font-semibold tracking-[-0.03em] text-[#0E0E0E] tabular-nums sm:text-[24px]">
+                  <span>{formatPeso(metrics.averageCpw)}</span>
+                  <span className="text-[11px] font-normal tracking-normal text-[#6C6A64]">
+                    /wear
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-r border-[#E2E0DA] py-4 pr-4 sm:px-5 lg:py-6">
+                <div className="text-[10px] font-medium tracking-[0.14em] text-[#6C6A64] uppercase">
+                  Logged Wears
+                </div>
+                <div className="mt-1.5 text-[20px] leading-none font-semibold tracking-[-0.03em] text-[#0E0E0E] tabular-nums sm:text-[24px]">
+                  {metrics.totalWears}
+                </div>
+              </div>
+
+              <div className="py-4 pl-4 sm:pl-5 lg:py-6">
+                <div className="text-[10px] font-medium tracking-[0.14em] text-[#6C6A64] uppercase">
+                  Unworn 90d+
+                </div>
+                <div className="mt-1.5 text-[20px] leading-none font-semibold tracking-[-0.03em] text-[#0E0E0E] tabular-nums sm:text-[24px]">
+                  {metrics.deadStockCount}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Category filter pills + sort */}
-          <div className="flex flex-wrap items-center justify-between gap-3 py-3">
+          {/* Bottom Row: Uniqlo-Style Horizontal Underline Category Rail + Sort */}
+          <div className="flex items-center justify-between gap-4">
             <div
               role="tablist"
               aria-label="Filter wardrobe by category"
-              className="flex flex-wrap items-center gap-1.5"
+              className="no-scrollbar flex min-w-0 flex-1 items-stretch gap-5 overflow-x-auto sm:gap-7"
             >
               {(["all", ...WARDROBE_CATEGORIES] as const).map((cat) => {
                 const isActive = activeCategory === cat;
@@ -282,54 +303,53 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
                     role="tab"
                     aria-selected={isActive}
                     onClick={() => setActiveCategory(cat)}
-                    className={`inline-flex h-8 items-center gap-1.5 border px-3 text-[12px] transition-colors ${
+                    className={`relative inline-flex h-12 shrink-0 items-center gap-1.5 text-[12px] tracking-[0.02em] transition-colors ${
                       isActive
-                        ? "border-[#111111] bg-[#111111] font-medium text-white"
-                        : "border-[#E5E5E5] bg-white text-[#525252] hover:border-[#111111] hover:text-[#111111]"
+                        ? "font-medium text-[#0E0E0E]"
+                        : "text-[#6C6A64] hover:text-[#0E0E0E]"
                     }`}
                   >
                     <span>{label}</span>
                     <span
                       className={`text-[11px] tabular-nums ${
-                        isActive ? "text-white/75" : "text-[#6B6B6B]"
+                        isActive ? "text-[#0E0E0E]" : "text-[#6C6A64]"
                       }`}
                     >
                       {categoryCounts[cat]}
                     </span>
+                    {isActive && (
+                      <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#0E0E0E]" />
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            <div className="flex items-center gap-3">
-              <span className="hidden text-[12px] text-[#6B6B6B] tabular-nums sm:inline">
-                {metrics.totalWears}{" "}
-                {metrics.totalWears === 1 ? "wear" : "wears"} logged
-              </span>
-              <label className="flex items-center gap-2 text-[12px] text-[#6B6B6B]">
+            <div className="shrink-0 py-2">
+              <label className="flex items-center gap-2 text-[12px] text-[#6C6A64]">
                 <span className="sr-only">Sort pieces</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="h-8 border border-[#E5E5E5] bg-white px-2.5 text-[12px] text-[#111111] transition-colors hover:border-[#111111] focus:border-[#111111] focus:outline-none"
+                  className="h-9 border border-[#E2E0DA] bg-[#F9F8F6] px-2.5 text-[12px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E] focus:border-[#0E0E0E]"
                 >
-                  <option value="recent">Sort: Recent</option>
-                  <option value="cpw_desc">Sort: Highest ₱/wear</option>
-                  <option value="cpw_asc">Sort: Lowest ₱/wear</option>
-                  <option value="wears_desc">Sort: Most worn</option>
+                  <option value="recent">Recent</option>
+                  <option value="cpw_desc">Highest ₱/wear</option>
+                  <option value="cpw_asc">Lowest ₱/wear</option>
+                  <option value="wears_desc">Most worn</option>
                 </select>
               </label>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Main Wardrobe Gallery */}
-      <main className="mx-auto max-w-[1400px] px-4 py-7 sm:px-6 lg:px-8">
+      {/* Main Swiss-Japanese Shared-Hairline Catalog Grid */}
+      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
         {actionError && (
           <div
             role="alert"
-            className="mb-6 flex items-center justify-between border border-[#DC2626]/30 bg-[#FEF2F2] px-4 py-2.5 text-[13px] text-[#991B1B]"
+            className="mb-6 flex items-center justify-between border border-[#D9B4B2] bg-[#FAF2F2] px-4 py-3 text-[13px] text-[#8C1D18]"
           >
             <span>{actionError}</span>
             <button
@@ -343,46 +363,50 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
         )}
 
         {items.length === 0 ? (
-          <section className="flex flex-col items-center justify-center border border-dashed border-[#D4D4D4] bg-white px-6 py-24 text-center">
-            <div className="flex h-12 w-12 items-center justify-center border border-[#E5E5E5] bg-[#FAFAFA] text-[#111111]">
-              <Shirt className="h-5 w-5" strokeWidth={1.25} />
+          <section className="flex flex-col items-center justify-center border border-[#E2E0DA] bg-white px-6 py-24 text-center">
+            <div className="flex h-12 w-12 items-center justify-center border border-[#E2E0DA] bg-[#F2F1ED] text-[#0E0E0E]">
+              <Shirt className="h-5 w-5" strokeWidth={1.3} />
             </div>
-            <h1 className="mt-5 text-[16px] font-medium text-[#111111]">
+            <h2 className="mt-5 text-[18px] font-medium tracking-[-0.02em] text-[#0E0E0E]">
               Your closet archive is empty
-            </h1>
-            <p className="mt-1.5 max-w-[38ch] text-[13px] leading-relaxed text-[#525252]">
+            </h2>
+            <p className="mt-1.5 max-w-[40ch] text-[13px] leading-relaxed text-[#4A4945]">
               Upload your first garment photo to isolate a clean transparent
-              cutout and begin tracking cost per wear.
+              cutout and begin measuring cost per wear.
             </p>
             <button
               type="button"
               onClick={() => setIsUploadOpen(true)}
-              className="mt-6 inline-flex h-9 items-center gap-1.5 bg-[#111111] px-4 text-[12px] font-medium text-white transition-colors hover:bg-[#262626]"
+              className="mt-6 inline-flex h-10 items-center gap-2 bg-[#0E0E0E] px-5 text-[12px] font-medium tracking-[0.02em] text-white transition-colors hover:bg-[#2B2B29]"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Add Piece</span>
+              <span>Add First Piece</span>
             </button>
           </section>
         ) : visibleItems.length === 0 ? (
-          <section className="flex flex-col items-center justify-center border border-dashed border-[#D4D4D4] bg-white px-6 py-20 text-center">
-            <p className="text-[14px] font-medium text-[#111111]">
-              No {activeCategory !== "all" ? CATEGORY_LABELS[activeCategory].toLowerCase() : ""} pieces yet
+          <section className="flex flex-col items-center justify-center border border-[#E2E0DA] bg-white px-6 py-20 text-center">
+            <p className="text-[15px] font-medium tracking-[-0.015em] text-[#0E0E0E]">
+              No{" "}
+              {activeCategory !== "all"
+                ? CATEGORY_LABELS[activeCategory].toLowerCase()
+                : ""}{" "}
+              pieces yet
             </p>
-            <p className="mt-1 text-[13px] text-[#525252]">
-              Add a piece in this category or switch back to your full closet.
+            <p className="mt-1.5 text-[13px] text-[#4A4945]">
+              Add a garment in this category or switch back to your full archive.
             </p>
-            <div className="mt-5 flex items-center gap-2.5">
+            <div className="mt-6 flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={() => setActiveCategory("all")}
-                className="h-8 border border-[#E5E5E5] bg-white px-3 text-[12px] font-medium text-[#111111] transition-colors hover:border-[#111111]"
+                className="h-9 border border-[#E2E0DA] bg-white px-4 text-[12px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E]"
               >
                 Show all
               </button>
               <button
                 type="button"
                 onClick={() => setIsUploadOpen(true)}
-                className="inline-flex h-8 items-center gap-1.5 bg-[#111111] px-3 text-[12px] font-medium text-white transition-colors hover:bg-[#262626]"
+                className="inline-flex h-9 items-center gap-1.5 bg-[#0E0E0E] px-4 text-[12px] font-medium text-white transition-colors hover:bg-[#2B2B29]"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Add Piece</span>
@@ -390,7 +414,7 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
             </div>
           </section>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-2 border-t border-l border-[#E2E0DA] md:grid-cols-3 xl:grid-cols-4">
             {visibleItems.map((item) => {
               const cpw = calculateCostPerWear(item.price, item.wearCount);
               const lastWorn = parseIsoDateOnly(item.lastWornDate);
@@ -403,46 +427,23 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
               return (
                 <article
                   key={item.id}
-                  className="group flex flex-col border border-[#E5E5E5] bg-white transition-colors hover:border-[#CCCCCC]"
+                  className="group flex flex-col border-r border-b border-[#E2E0DA] bg-white"
                 >
-                  {/* Neutral Garment Cutout Stage */}
-                  <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden bg-[#F4F4F3] p-6">
-                    <span className="absolute top-3 left-3 text-[10px] font-medium tracking-[0.1em] text-[#525252] uppercase">
+                  {/* Warm Chalk-Stone Studio Stage */}
+                  <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden bg-[#F2F1ED] p-3.5 sm:p-6">
+                    <span className="absolute top-2.5 left-2.5 text-[9px] font-medium tracking-[0.14em] text-[#6C6A64] uppercase sm:top-3.5 sm:left-3.5 sm:text-[10px]">
                       {CATEGORY_LABELS[item.category]}
                     </span>
 
-                    {item.price > 0 && (
-                      <span
-                        title="Live cost per wear"
-                        className="absolute top-3 right-3 border border-[#E5E5E5] bg-white px-2 py-0.5 text-[11px] font-medium text-[#111111] tabular-nums"
-                      >
-                        {formatPeso(cpw)}/wear
-                      </span>
-                    )}
-
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      loading="lazy"
-                      className="max-h-full max-w-full object-contain drop-shadow-[0_12px_18px_rgba(17,17,17,0.08)] transition-transform duration-300 group-hover:scale-[1.02]"
-                    />
-
-                    {deadStock && (
-                      <span className="absolute bottom-3 left-3 border border-[#D6D3D1] bg-[#FAFAF9]/95 px-2 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[#57534E]">
-                        90d+ unworn
-                      </span>
-                    )}
-
-                    {/* Discreet inline delete control */}
-                    <div className="absolute right-3 bottom-3">
+                    {/* Discreet Delete Control */}
+                    <div className="absolute top-2 right-2 z-10 sm:top-3 sm:right-3">
                       {isConfirmingDelete ? (
-                        <div className="flex items-center gap-1 border border-[#E5E5E5] bg-white p-1">
+                        <div className="flex items-center gap-1 border border-[#0E0E0E] bg-white p-1">
                           <button
                             type="button"
                             onClick={() => handleDelete(item.id)}
                             disabled={isDeleting}
-                            className="bg-[#111111] px-2 py-0.5 text-[11px] font-medium text-white hover:bg-[#262626] disabled:opacity-50"
+                            className="bg-[#0E0E0E] px-2 py-1 text-[10px] font-medium text-white hover:bg-[#2B2B29] disabled:opacity-50 sm:text-[11px]"
                           >
                             {isDeleting ? "…" : "Delete"}
                           </button>
@@ -450,7 +451,7 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
                             type="button"
                             onClick={() => setConfirmDeleteId(null)}
                             disabled={isDeleting}
-                            className="px-1.5 py-0.5 text-[11px] text-[#525252] hover:text-[#111111]"
+                            className="px-1.5 py-1 text-[10px] text-[#4A4945] hover:text-[#0E0E0E] sm:text-[11px]"
                           >
                             Cancel
                           </button>
@@ -461,34 +462,64 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
                           onClick={() => setConfirmDeleteId(item.id)}
                           aria-label={`Delete ${item.name}`}
                           title="Delete piece"
-                          className="flex h-7 w-7 items-center justify-center border border-[#E5E5E5] bg-white/90 text-[#6B6B6B] opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:border-[#111111] hover:text-[#111111]"
+                          className="flex h-8 w-8 items-center justify-center border border-[#E2E0DA] bg-white/90 text-[#6C6A64] opacity-100 transition-opacity hover:border-[#0E0E0E] hover:text-[#0E0E0E] focus:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.6} />
                         </button>
                       )}
                     </div>
+
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.imageUrl}
+                      alt={item.name}
+                      loading="lazy"
+                      className="max-h-full max-w-full object-contain drop-shadow-[0_14px_20px_rgba(14,14,14,0.09)] transition-transform duration-300 ease-out group-hover:scale-[1.035]"
+                    />
+
+                    {deadStock && (
+                      <span className="absolute bottom-2.5 left-2.5 bg-[#0E0E0E] px-2 py-0.5 text-[9px] font-medium tracking-[0.12em] text-white uppercase sm:bottom-3.5 sm:left-3.5 sm:text-[10px]">
+                        90d+ Unworn
+                      </span>
+                    )}
                   </div>
 
-                  {/* Editorial Ledger Footer */}
-                  <div className="flex flex-1 flex-col justify-between gap-3 border-t border-[#E5E5E5] p-4">
+                  {/* Hangtag Spec Footer */}
+                  <div className="flex flex-1 flex-col justify-between bg-white p-3 sm:p-4">
                     <div>
-                      <div className="flex items-baseline justify-between gap-3">
-                        <h2 className="truncate text-[14px] font-medium text-[#111111]">
-                          {item.name}
-                        </h2>
-                        {item.price > 0 && (
-                          <span className="shrink-0 text-[13px] text-[#525252] tabular-nums">
-                            {formatPeso(item.price)}
-                          </span>
-                        )}
-                      </div>
+                      <h2 className="truncate text-[13px] font-medium tracking-[-0.01em] text-[#0E0E0E] sm:text-[14px]">
+                        {item.name}
+                      </h2>
 
-                      <div className="mt-1 flex items-center justify-between text-[12px] text-[#6B6B6B]">
-                        <span className="tabular-nums">
+                      <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[#6C6A64] tabular-nums">
+                        <span>
                           {item.wearCount}{" "}
                           {item.wearCount === 1 ? "wear" : "wears"}
                         </span>
+                        <span aria-hidden="true">·</span>
                         <span>{formatLastWornLabel(lastWorn)}</span>
+                      </div>
+
+                      <div className="mt-2.5 flex items-baseline justify-between gap-2 border-t border-[#E2E0DA]/80 pt-2.5">
+                        {item.price > 0 ? (
+                          <>
+                            <div className="flex items-baseline gap-0.5 tabular-nums">
+                              <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#0E0E0E] sm:text-[17px]">
+                                {formatPeso(cpw)}
+                              </span>
+                              <span className="text-[10px] text-[#6C6A64] sm:text-[11px]">
+                                /wear
+                              </span>
+                            </div>
+                            <span className="shrink-0 text-[11px] text-[#6C6A64] tabular-nums sm:text-[12px]">
+                              {formatPeso(item.price)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-[11px] tracking-[0.06em] text-[#6C6A64] uppercase">
+                            Archive piece
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -496,24 +527,24 @@ export function ClosetClient({ initialItems, userName }: ClosetClientProps) {
                       type="button"
                       onClick={() => handleLogWear(item.id)}
                       disabled={isLogging}
-                      className={`flex h-9 w-full items-center justify-center gap-1.5 border text-[12px] font-medium transition-colors disabled:opacity-60 ${
+                      className={`mt-3 flex h-9 w-full items-center justify-center gap-1.5 border text-[11px] font-medium tracking-[0.04em] uppercase transition-colors disabled:opacity-55 sm:text-[12px] ${
                         isJustLogged
-                          ? "border-[#111111] bg-[#111111] text-white"
-                          : "border-[#E5E5E5] bg-white text-[#111111] hover:border-[#111111] hover:bg-[#111111] hover:text-white"
+                          ? "border-[#0E0E0E] bg-[#0E0E0E] text-white"
+                          : "border-[#E2E0DA] bg-[#F9F8F6] text-[#0E0E0E] hover:border-[#0E0E0E] hover:bg-[#0E0E0E] hover:text-white"
                       }`}
                     >
                       {isLogging ? (
                         <>
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          <span>Logging…</span>
+                          <span>Logging</span>
                         </>
                       ) : isJustLogged ? (
                         <>
-                          <Check className="h-3.5 w-3.5" />
+                          <Check className="h-3.5 w-3.5" strokeWidth={2} />
                           <span>Worn Today</span>
                         </>
                       ) : (
-                        <span>+1 Worn Today</span>
+                        <span>+ Worn Today</span>
                       )}
                     </button>
                   </div>

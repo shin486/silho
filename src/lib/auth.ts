@@ -9,6 +9,7 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  trustedOrigins: ["http://localhost:3000", "https://*.trycloudflare.com"],
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,

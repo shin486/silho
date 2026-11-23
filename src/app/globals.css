@@ -6,14 +6,19 @@
 }
 
 :root {
-  --bg-canvas: #fafafa;
+  --bg-canvas: #f9f8f6;
   --bg-surface: #ffffff;
-  --bg-well: #f4f4f3;
-  --border-hairline: #e5e5e5;
-  --border-strong: #111111;
-  --ink-primary: #111111;
-  --ink-secondary: #525252;
-  --ink-muted: #6b6b6b;
+  --bg-well: #f2f1ed;
+  --bg-well-deep: #eae8e3;
+  --border-hairline: #e2e0da;
+  --border-mid: #c8c5bd;
+  --border-strong: #0e0e0e;
+  --ink-primary: #0e0e0e;
+  --ink-secondary: #4a4945;
+  --ink-muted: #6c6a64;
+  --status-danger-bg: #faf2f2;
+  --status-danger-border: #d9b4b2;
+  --status-danger-ink: #8c1d18;
 }
 
 @layer base {
@@ -33,12 +38,12 @@
   }
 
   ::selection {
-    background-color: #111111;
-    color: #fafafa;
+    background-color: var(--ink-primary);
+    color: var(--bg-canvas);
   }
 
   :focus-visible {
-    outline: 1.5px solid #111111;
+    outline: 1.5px solid var(--ink-primary);
     outline-offset: 2px;
   }
 
@@ -52,25 +57,34 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #d4d4d4;
+    background: var(--border-mid);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #a3a3a3;
+    background: var(--ink-muted);
   }
 }
 
 .cutout-checkerboard {
   background-color: #ffffff;
   background-image: conic-gradient(
-    #efefef 90deg,
+    #f2f1ed 90deg,
     #ffffff 90deg 180deg,
-    #efefef 180deg 270deg,
+    #f2f1ed 180deg 270deg,
     #ffffff 270deg
   );
   background-size: 16px 16px;
 }
 
 .wordmark {
-  letter-spacing: 0.26em;
+  letter-spacing: 0.28em;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

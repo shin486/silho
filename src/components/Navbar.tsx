@@ -34,17 +34,26 @@ export function Navbar({ userName, metricsSlot, actionSlot }: NavbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[#E5E5E5] bg-white/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-6 sm:gap-8">
+    <header className="sticky top-0 z-30 border-b border-[#E2E0DA] bg-white/95 backdrop-blur-sm">
+      <div className="mx-auto flex h-[60px] max-w-[1440px] items-center justify-between gap-2.5 px-3.5 sm:gap-4 sm:px-6 lg:px-10">
+        <div className="flex h-full min-w-0 items-center gap-3.5 sm:gap-10">
           <Link
             href="/closet"
-            className="wordmark text-[15px] font-medium text-[#111111] uppercase"
+            className="inline-flex shrink-0 items-center gap-2 text-[#0E0E0E] transition-opacity hover:opacity-75 sm:gap-2.5"
           >
-            SILHO
+            <span
+              aria-hidden="true"
+              className="h-[7px] w-[7px] shrink-0 bg-[#0E0E0E]"
+            />
+            <span className="wordmark text-[14px] font-semibold uppercase sm:text-[15px]">
+              SILHO
+            </span>
           </Link>
 
-          <nav aria-label="Primary" className="flex h-14 items-stretch gap-5">
+          <nav
+            aria-label="Primary"
+            className="flex h-full items-stretch gap-4 sm:gap-6"
+          >
             {NAV_ITEMS.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -52,15 +61,15 @@ export function Navbar({ userName, metricsSlot, actionSlot }: NavbarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative flex items-center text-[13px] transition-colors ${
+                  className={`relative flex items-center text-[13px] tracking-[0.01em] transition-colors ${
                     isActive
-                      ? "font-medium text-[#111111]"
-                      : "text-[#6B6B6B] hover:text-[#111111]"
+                      ? "font-medium text-[#0E0E0E]"
+                      : "text-[#6C6A64] hover:text-[#0E0E0E]"
                   }`}
                 >
                   {item.label}
                   {isActive && (
-                    <span className="absolute inset-x-0 bottom-0 h-[1.5px] bg-[#111111]" />
+                    <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#0E0E0E]" />
                   )}
                 </Link>
               );
@@ -68,18 +77,18 @@ export function Navbar({ userName, metricsSlot, actionSlot }: NavbarProps) {
           </nav>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-5">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           {metricsSlot && (
-            <div className="hidden items-center gap-5 border-r border-[#E5E5E5] pr-5 lg:flex">
+            <div className="hidden items-center gap-5 border-r border-[#E2E0DA] pr-5 lg:flex">
               {metricsSlot}
             </div>
           )}
 
           {actionSlot}
 
-          <div className="flex items-center gap-3 border-l border-[#E5E5E5] pl-3 sm:pl-4">
+          <div className="flex items-center gap-3 border-l border-[#E2E0DA] pl-2 sm:pl-4">
             {userName && (
-              <span className="hidden max-w-[140px] truncate text-[12px] text-[#525252] xl:inline">
+              <span className="hidden max-w-[150px] truncate text-[12px] text-[#4A4945] xl:inline">
                 {userName}
               </span>
             )}
@@ -89,12 +98,12 @@ export function Navbar({ userName, metricsSlot, actionSlot }: NavbarProps) {
               disabled={signingOut}
               aria-label="Sign out"
               title="Sign out"
-              className="inline-flex h-8 items-center gap-1.5 border border-[#E5E5E5] bg-white px-2.5 text-[12px] text-[#525252] transition-colors hover:border-[#111111] hover:text-[#111111] disabled:opacity-50"
+              className="inline-flex h-9 w-9 items-center justify-center gap-1.5 border border-[#E2E0DA] bg-white px-0 text-[12px] font-medium text-[#4A4945] transition-colors hover:border-[#0E0E0E] hover:text-[#0E0E0E] disabled:opacity-50 sm:w-auto sm:px-3"
             >
               {signingOut ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-3.5 w-3.5" strokeWidth={1.6} />
               )}
               <span className="hidden sm:inline">Sign out</span>
             </button>
