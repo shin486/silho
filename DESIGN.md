@@ -85,11 +85,11 @@ components:
     height: "36px"
     padding: "0 12px"
   input-field:
-    backgroundColor: "{colors.chalk-white}"
+    backgroundColor: "transparent"
     textColor: "{colors.sumi-ink}"
     rounded: "{rounded.none}"
-    height: "56px"
-    padding: "0 16px"
+    height: "48px"
+    padding: "12px 0"
   catalog-tile:
     backgroundColor: "{colors.chalk-white}"
     textColor: "{colors.sumi-ink}"
@@ -105,7 +105,7 @@ components:
 
 SILHO takes its visual poise from Japanese minimalist apparel retail and Swiss archival cataloging: pure architectural monochrome that earns charisma through decisive typographic scale, warm stone-paper tonal separation, and continuous 1px catalog hairlines rather than color gimmicks or decorative chrome. Garments sit like photographed lookbook objects inside warm chalk-stone wells, anchored below by hangtag-style tabular numerals that make cost-per-wear immediately legible.
 
-Every surface operates as a calm, fast daily utility across desktop and mobile browsers. Navigation, category filters, and studio mode switches drop boxy pill wrappers in favor of crisp full-height underline rails, while a solid 7px sumi-ink square beside the wide-tracked SILHO wordmark acts as the system's quiet signature stamp.
+Every surface operates as a calm, fast daily utility across desktop and mobile browsers. Navigation, category filters, and studio mode switches drop boxy pill wrappers in favor of crisp full-height underline rails, while the pure typographic uppercase `SILHO` wordmark (`0.18em` tracking, zero geometric icons, squares, or dots) anchors the brand with quiet editorial restraint.
 
 **Key Characteristics:**
 - Pure architectural monochrome built on warm alabaster paper, chalk white, warm chalk stone, and deep sumi ink.
@@ -118,7 +118,7 @@ Every surface operates as a calm, fast daily utility across desktop and mobile b
 A strictly monochrome warm-stone palette where tonal temperature and crisp ink contrast do all the structural work, reserving muted crimson strictly for error alerts.
 
 ### Primary
-- **Sumi Ink** (`sumi-ink`): Primary text, active 2px underline indicators, primary action fills, selection rings, dead-stock stamps, focus outlines, and the 7px brand square mark.
+- **Sumi Ink** (`sumi-ink`): Primary text, active 2px underline indicators, primary action fills, selection rings, dead-stock stamps, focus rules, and the pure typographic `SILHO` wordmark.
 - **Sumi Charcoal** (`sumi-hover`): Hover state for solid primary buttons, stepping softly upward in luminance without losing contrast.
 
 ### Neutral
@@ -145,21 +145,23 @@ A strictly monochrome warm-stone palette where tonal temperature and crisp ink c
 **Character:** A geometric workhorse grotesque paired with IBM Plex Mono for field indexes, sentence-case micro-labels, tabular numerals, and ledger equations—creating quiet Swiss-Japanese archival discipline without uppercase tracking clichés or decorative display faces.
 
 ### Hierarchy
-- **Display / Auth Heading** (`500`, `24px–28px`, `1.15` line-height, `-0.025em` tracking): Ruled hangtag headers (`Sign in`, `Start an archive`).
+- **Display / Auth Heading** (`400`, `28px` mobile / `36px` desktop, `1.12` line-height, `-0.025em` tracking): Fashion-house auth headings (`Sign in`, `Create wardrobe`) paired with a quiet single-line `14px` `#666666` subtitle (`Enter your studio wardrobe.`).
 - **Headline / Ledger Figure** (`600`, `20px–26px`, `1.0` line-height, `-0.03em` tracking, `tabular-nums`): Archive ledger KPIs (`Total Archive`, `Avg. Cost / Wear`, `Logged Wears`, `Unworn 90d+`) and prominent card CPW figures (`15px–17px`).
 - **Title** (`500`, `13px–16px`, `1.35` line-height, `-0.01em` tracking): Garment titles, modal headers, and panel section names.
 - **Body** (`400`, `13px–16px`, `1.55` line-height, `65–75ch` max prose measure): Explanatory copy, empty-state guidance, and `16px` touch-safe form inputs.
-- **Label / Spec (Mono)** (`400`–`500`, `11px–12px`, `1.35` line-height, `0em` tracking, `tabular-nums`, sentence case): Hangtag row indexes (`01`, `02`, `03`), sentence-case field labels (`Name`, `Email`, `Password`), inline controls (`Show`/`Hide`), ledger specimen equations, and colophon metadata.
+- **Label / Spec** (`400`–`500`, `11px–12px`, `1.35` line-height, `tabular-nums`): Sentence-case `#737373` field labels (`Name`, `Email`, `Password`), inline controls (`Show`/`Hide`), and quiet studio captions (`WARDROBE STUDIO`, `SILHO — PERSONAL WARDROBE ARCHIVE`).
 
 ### Named Rules
-**The Tabular Ledger Rule.** Every currency amount (`₱`), wear count, dimension (`cm`/`kg`), row index, and percentage uses `tabular-nums` so numbers align cleanly across grids and never jitter during optimistic wear updates.
+**The Tabular Ledger Rule.** Every currency amount (`₱`), wear count, dimension (`cm`/`kg`), and percentage uses `tabular-nums` so numbers align cleanly across grids and never jitter during optimistic wear updates.
 
 ## Layout
 
-SILHO uses a `1440px` centered maximum container (`1200px` on Auth) with responsive horizontal gutters (`16px` mobile, `24px`–`32px` tablet, `40px` desktop). Routine app navigation sits in a sticky `60px` top bar, followed by full-width hairline-bordered ledger or mode strips on pure Chalk White (`chalk-white`) so working content sits immediately below with zero wasted hero padding.
+SILHO uses a `1440px` centered maximum container with responsive horizontal gutters (`16px`–`24px` mobile, `32px` tablet, `40px` desktop). Routine app navigation sits in a sticky `60px` top bar, followed by full-width hairline-bordered ledger or mode strips on pure Chalk White (`chalk-white`) so working content sits immediately below with zero wasted hero padding.
 
-### Auth Surface (`/login` & `/register` — Light-Only Archival Slip)
-Authentication routes stay strictly light-only (`#FAFAFA` paper ground, `#FFFFFF` ruled slip, `#0A0A0A` carbon ink, `#666666` muted graphite, `#E5E5E5` `1px` hairlines) with no theme toggle, keeping the first `56px` input row immediately accessible near the top of mobile viewports. On desktop (`>= 1024px`), a 12-column editorial grid anchors the 420px Hangtag slip on columns 2–6 beside a quiet left-ruled cost-per-wear equation (`₱ 2,400 ÷ 18 wears = ₱ 133 / wear`) on columns 8–11.
+### Auth Surface (`/login` & `/register` — Minimalist Fashion & Wardrobe Studio)
+Authentication routes stay strictly light-only (`#FFFFFF` form surface, `#FAFAFA` studio canvas, `#0A0A0A` carbon ink, `#737373` muted labels, `#E5E5E5` `1px` hairlines) with zero theme toggles, zero squares/dots, and zero spreadsheet boxes:
+- **Mobile (`< 768px`):** Single-column layout on `#FFFFFF` with `24px` horizontal padding, a minimal top header (`SILHO` on the left, `WARDROBE STUDIO` in `11px` tracked caps on the right, `1px` `#F0F0F0` bottom rule), a compact `64px` `1px` architectural garment-on-hanger line mark, editorial title + subtitle, underline seam inputs (`28px` vertical gap), and a `48px` (`h-12`) solid `#0A0A0A` submit button—fitting comfortably above the fold without scrolling.
+- **Desktop (`>= 768px`):** Clean `50/50` split screen separated by a `1px` `#E5E5E5` vertical hairline. The left half is a `#FAFAFA` studio canvas showcasing a `1px` architectural tailoring silhouette & hanger study captioned `SILHO — PERSONAL WARDROBE ARCHIVE`; the right half centers a `max-w-[380px]` sign-in form on `#FFFFFF`.
 
 Catalog galleries (`Closet`, `Lookbook`, and `Canvas` garment pickers) use a **shared 1px hairline grid**: the container draws `border-top` and `border-left` (`stone-hairline`), and each tile draws `border-right` and `border-bottom`. This guarantees crisp single-pixel architectural seams across all columns without doubled borders or gray empty cells on partial final rows. On mobile (`< 640px`), Closet and Lookbook switch to a 2-column lookbook grid (`grid-cols-2`) and horizontal category/mode tabs scroll smoothly in a single row without wrapping.
 
@@ -172,7 +174,7 @@ SILHO is flat by default and communicates hierarchy through crisp 1px hairlines 
 
 ## Shapes
 
-Every button, input, toggle, tile, modal, and badge uses strictly sharp `0px` corners (`rounded.none`). This architectural discipline lets garment silhouettes and human portraits provide the only soft organic curves on the screen. The brand lockup echoes this geometry with a solid `7px × 7px` Sumi Ink square stamp paired beside the wide-tracked uppercase `SILHO` wordmark (`0.28em` tracking).
+Every button, input, toggle, tile, modal, and badge uses strictly sharp `0px` corners (`rounded.none`). This architectural discipline lets garment silhouettes and human portraits provide the only soft organic curves on the screen. The brand wordmark is pure uppercase `SILHO` typography (`13px`, `font-medium`, `0.18em` tracking) with zero accompanying squares, dots, or geometric icons.
 
 ## Components
 
@@ -194,10 +196,10 @@ Every interactive component shares sharp 0px geometry, crisp 1px hairline border
 - **Selection (Studio Pickers):** Selected garments highlight via an overlaid `1.5px` Sumi Ink frame (`pointer-events-none absolute inset-0 border-[1.5px]`) painting cleanly above opaque image wells, paired with a top-right solid Sumi Ink slot badge (`UPPER` / `LOWER` / `STYLED`).
 
 ### Inputs / Fields
-- **Auth Hangtag Rows:** Flush `56px` (`h-14`) ruled rows inside a `#FFFFFF` `1px` `#E5E5E5` container (`0px` radius). Each row pairs a fixed `116px`–`128px` right-ruled `IBM Plex Mono` index and sentence-case label cell (`01 Email`, `02 Password` on sign-in; `01 Name`, `02 Email`, `03 Password` on register) with a borderless `16px` `Inter` input cell (zero placeholders), inline `Show`/`Hide` mono password toggle, and a full-width `56px` solid `#0A0A0A` submit row.
+- **Auth Tailored Seam Inputs:** Full-width transparent bottom-border inputs (`border-0 border-b border-[#E5E5E5] focus:border-[#0A0A0A] rounded-none px-0 py-3`, `16px` text, zero placeholders) stacked with generous `28px` vertical breathing room beneath `12px` sentence-case `#737373` labels (`Name`, `Email`, `Password`) and an inline right-aligned `Show`/`Hide` text control inside the password seam.
 - **Standard Studio Inputs:** `44px` (`h-11`) tall Chalk White fields with `1px` Stone Hairline borders, `0px` radius, and `14px` Sumi Ink text.
-- **Focus:** Auth hangtag rows apply a crisp `1px` inset `#0A0A0A` focus frame (`focus-within:shadow-[inset_0_0_0_1px_#0A0A0A]`) with zero layout shift and `#0A0A0A` text caret; standard fields shift border to Sumi Ink with a `1.5px` `:focus-visible` outline (`2px` offset).
-- **Error / Disabled:** Validation errors display in dedicated `role="alert"` banners (`danger-bg` / `danger-border` / `danger-ink`); disabled fields step down to `#FAFAFA`.
+- **Focus:** Auth seam inputs transition their `1px` bottom rule crisply from `#E5E5E5` to `#0A0A0A` with a `#0A0A0A` text caret; standard fields shift border to Sumi Ink with a `1.5px` `:focus-visible` outline (`2px` offset).
+- **Error / Disabled:** Auth validation errors render in `#0A0A0A` text framed by a crisp `1px` `#0A0A0A` left rule (`border-l border-[#0A0A0A]`); studio modal alerts use `danger-bg` / `danger-border` / `danger-ink`.
 
 ### Opening Wordmark (`OpeningAnimation` + `StrokeText`)
 - Full-viewport `100dvh` Alabaster Paper (`alabaster-paper`) opening veil drawing `SILHO` in Sumi Ink hairline strokes (`Inter` 500) followed by a left-to-right ink wipe and synchronized `1px` architectural hairline rule. Scale, stroke weight, tracking, and duration adapt across six screen profiles (compact mobile through ultrawide and short landscape) with a `44×44px` bottom-safe `Skip` control, `Escape` dismissal, and calm opacity-only `prefers-reduced-motion` path.

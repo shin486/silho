@@ -181,9 +181,9 @@
   display: none;
 }
 
-.silho-hangtag-input:-webkit-autofill,
-.silho-hangtag-input:-webkit-autofill:hover,
-.silho-hangtag-input:-webkit-autofill:focus {
+.silho-seam-input:-webkit-autofill,
+.silho-seam-input:-webkit-autofill:hover,
+.silho-seam-input:-webkit-autofill:focus {
   -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
   -webkit-text-fill-color: #0a0a0a;
   caret-color: #0a0a0a;
