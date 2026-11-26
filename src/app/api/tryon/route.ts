@@ -40,7 +40,7 @@ import {
 } from "@/lib/utils/garmentReshaper";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const BUSY_ERROR_MESSAGE =
   "AI try-on server is currently busy. Try again in a moment or use the Layer Board.";
