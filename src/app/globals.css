@@ -1,29 +1,65 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 :root {
-  --bg-canvas: #f9f8f6;
+  /* Light Mode — Default Studio */
+  --bg-viewport: #ececeb;
+  --bg-canvas: #ececeb;
   --bg-surface: #ffffff;
-  --bg-well: #f2f1ed;
-  --bg-well-deep: #eae8e3;
-  --border-hairline: #e2e0da;
-  --border-mid: #c8c5bd;
-  --border-strong: #0e0e0e;
-  --ink-primary: #0e0e0e;
-  --ink-secondary: #4a4945;
-  --ink-muted: #6c6a64;
+  --bg-well: #f6f6f5;
+  --bg-tile: #f4f4f3;
+  --bg-well-deep: #ececeb;
+  --bg-band: #141415;
+  --ink-primary: #111111;
+  --ink-secondary: #4a4a4a;
+  --ink-muted: #616161;
+  --ink-on-band: #f5f5f5;
+  --border-hairline: #e5e5e3;
+  --border-mid: #cccccc;
+  --border-strong: #111111;
+  --slider-track: #c4c4c1;
+  --btn-primary-bg: #111111;
+  --btn-primary-fg: #ffffff;
+  --btn-primary-hover: #262628;
   --status-danger-bg: #faf2f2;
   --status-danger-border: #d9b4b2;
   --status-danger-ink: #8c1d18;
 }
 
+[data-theme="dark"] {
+  /* Dark Mode — Obsidian Studio */
+  --bg-viewport: #1e2022;
+  --bg-canvas: #1e2022;
+  --bg-surface: #121213;
+  --bg-well: #1b1b1d;
+  --bg-tile: #19191b;
+  --bg-well-deep: #161618;
+  --bg-band: #1d1d1f;
+  --ink-primary: #f5f5f5;
+  --ink-secondary: #b8b8bc;
+  --ink-muted: #8a8a8e;
+  --ink-on-band: #f5f5f5;
+  --border-hairline: #262629;
+  --border-mid: #3a3a3f;
+  --border-strong: #f5f5f5;
+  --slider-track: #3f3f45;
+  --btn-primary-bg: #f5f5f5;
+  --btn-primary-fg: #111111;
+  --btn-primary-hover: #dcdce0;
+  --status-danger-bg: #261616;
+  --status-danger-border: #5c2b29;
+  --status-danger-ink: #f2b8b5;
+}
+
 @layer base {
   html {
-    background-color: var(--bg-canvas);
+    background-color: var(--bg-viewport);
     color: var(--ink-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -31,15 +67,18 @@
   }
 
   body {
-    background-color: var(--bg-canvas);
+    background-color: var(--bg-viewport);
     color: var(--ink-primary);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     caret-color: var(--ink-primary);
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
   }
 
   ::selection {
     background-color: var(--ink-primary);
-    color: var(--bg-canvas);
+    color: var(--bg-surface);
   }
 
   :focus-visible {
@@ -53,31 +92,82 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--bg-canvas);
+    background: var(--bg-viewport);
   }
 
   ::-webkit-scrollbar-thumb {
     background: var(--border-mid);
+    border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
     background: var(--ink-muted);
   }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 14px;
+    width: 14px;
+    border-radius: 9999px;
+    background: var(--ink-primary);
+    border: 2px solid var(--bg-surface);
+    cursor: pointer;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    height: 14px;
+    width: 14px;
+    border-radius: 9999px;
+    background: var(--ink-primary);
+    border: 2px solid var(--bg-surface);
+    cursor: pointer;
+  }
 }
 
 .cutout-checkerboard {
-  background-color: #ffffff;
+  background-color: var(--bg-surface);
   background-image: conic-gradient(
-    #f2f1ed 90deg,
-    #ffffff 90deg 180deg,
-    #f2f1ed 180deg 270deg,
-    #ffffff 270deg
+    var(--bg-well) 90deg,
+    var(--bg-surface) 90deg 180deg,
+    var(--bg-well) 180deg 270deg,
+    var(--bg-surface) 270deg
   );
   background-size: 16px 16px;
 }
 
 .wordmark {
-  letter-spacing: 0.28em;
+  letter-spacing: 0.24em;
+}
+
+.editorial-outline-text {
+  color: transparent;
+  -webkit-text-stroke: 1.15px var(--ink-secondary);
+}
+
+@keyframes silho-cpw-pulse {
+  0% {
+    opacity: 0.45;
+    transform: translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-cpw-drop {
+  animation: silho-cpw-pulse 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+
+  .animate-cpw-drop {
+    animation: none;
+  }
 }
 
 .no-scrollbar {

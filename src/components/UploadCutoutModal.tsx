@@ -30,7 +30,9 @@ import {
   WARDROBE_CATEGORIES,
   type WardrobeCategory,
 } from "@/lib/categories";
-import { formatPeso } from "@/lib/utils/costPerWear";
+import {
+  cleanGarmentName,
+} from "@/lib/utils/garmentName";
 import {
   analyzeForegroundSemantics,
   cropAndPadTransparentCanvas,
@@ -62,6 +64,7 @@ import { parseGarmentSemanticsInBrowser } from "@/lib/utils/semanticClothesParse
 interface UploadCutoutModalProps {
   open: boolean;
   onClose: () => void;
+  onSaved?: () => void;
 }
 
 type ProcessingStage = "idle" | "processing" | "ready" | "error";
@@ -254,7 +257,11 @@ function cloneWorkingBuffer(buf: WorkingCutoutBuffer): WorkingCutoutBuffer {
   };
 }
 
-export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
+export function UploadCutoutModal({
+  open,
+  onClose,
+  onSaved,
+}: UploadCutoutModalProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
@@ -271,7 +278,6 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
   const [name, setName] = useState("");
   const [category, setCategory] = useState<WardrobeCategory>("top");
   const categoryRef = useRef<WardrobeCategory>("top");
-  const [priceInput, setPriceInput] = useState("");
 
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [normalizedOriginalBlob, setNormalizedOriginalBlob] =
@@ -383,17 +389,17 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
         asset.usedExistingAlpha && sensitivity === "soft"
           ? new Uint8ClampedArray(asset.originalRgba)
           : recombineOriginalRgbWithAlphaMatte({
-              originalRgba: asset.originalRgba,
-              rawMatteAlpha: asset.rawMatteAlpha,
-              width: asset.width,
-              height: asset.height,
-              alphaCutoff: EDGE_SENSITIVITY_CUTOFFS[sensitivity],
-              // Apply bright-studio flood-fill rescue in Soft (default) & Max; Crisp uses strict neural matte
-              studioRescueMask:
-                sensitivity === "crisp" ? null : asset.studioRescueMask,
-              // Never auto-fill intentional transparent gaps on already-cutout PNG uploads
-              fillInteriorHoles: !asset.usedExistingAlpha,
-            });
+            originalRgba: asset.originalRgba,
+            rawMatteAlpha: asset.rawMatteAlpha,
+            width: asset.width,
+            height: asset.height,
+            alphaCutoff: EDGE_SENSITIVITY_CUTOFFS[sensitivity],
+            // Apply bright-studio flood-fill rescue in Soft (default) & Max; Crisp uses strict neural matte
+            studioRescueMask:
+              sensitivity === "crisp" ? null : asset.studioRescueMask,
+            // Never auto-fill intentional transparent gaps on already-cutout PNG uploads
+            fillInteriorHoles: !asset.usedExistingAlpha,
+          });
       activeSourceRgbaRef.current = recombinedSource;
 
       const effectiveMode: IsolationMode = asset.semanticMap ? mode : "full";
@@ -478,7 +484,6 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
 
     setName("");
     setCategory("top");
-    setPriceInput("");
     setSourceFile(null);
     setNormalizedOriginalBlob(null);
     setParsedAsset(null);
@@ -716,12 +721,12 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
 
       studioRescueMask = detectedBorderStats?.isBrightStudio
         ? computeBrightStudioRescueMask({
-            originalRgba,
-            rawMatteAlpha,
-            width,
-            height,
-            borderStats: detectedBorderStats,
-          })
+          originalRgba,
+          rawMatteAlpha,
+          width,
+          height,
+          borderStats: detectedBorderStats,
+        })
         : null;
 
       sourceRgba = recombineOriginalRgbWithAlphaMatte({
@@ -837,11 +842,8 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
       });
 
       if (!name.trim()) {
-        const cleanedBaseName = file.name
-          .replace(/\.[^.]+$/, "")
-          .replace(/[-_]+/g, " ")
-          .trim();
-        if (cleanedBaseName && cleanedBaseName.length <= 60) {
+        const cleanedBaseName = cleanGarmentName(file.name, category);
+        if (cleanedBaseName && cleanedBaseName !== "Untitled Piece") {
           setName(cleanedBaseName);
         }
       }
@@ -1245,17 +1247,6 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
       return;
     }
 
-    const trimmedPrice = priceInput.trim();
-    const parsedPrice =
-      trimmedPrice === "" ? null : Number.parseFloat(trimmedPrice);
-    if (
-      parsedPrice !== null &&
-      (!Number.isFinite(parsedPrice) || parsedPrice < 0)
-    ) {
-      setError("Enter a valid purchase price in PHP, or leave blank.");
-      return;
-    }
-
     setIsSaving(true);
 
     try {
@@ -1280,7 +1271,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
       const result = await addWardrobeItem({
         name: trimmedName,
         category,
-        price: parsedPrice,
+        price: null,
         imageUrl: compressedDataUrl,
       });
 
@@ -1291,6 +1282,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
       }
 
       resetModal();
+      onSaved?.();
       onClose();
       router.refresh();
     } catch (err) {
@@ -1302,11 +1294,6 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
 
   if (!open) return null;
 
-  const parsedPricePreview = Number.parseFloat(priceInput.trim());
-  const hasValidPrice =
-    priceInput.trim() !== "" &&
-    Number.isFinite(parsedPricePreview) &&
-    parsedPricePreview > 0;
   const activeCategoryLabel = CATEGORY_LABELS[category];
   const canShowIsolationControls =
     stage === "ready" && !usingOriginalFallback && previewMode === "cutout";
@@ -1319,7 +1306,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0E0E0E]/45 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !isSaving) {
           handleClose();
@@ -1330,20 +1317,19 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-piece-title"
-        className="flex max-h-[92vh] w-full max-w-[840px] flex-col overflow-hidden border border-[#E2E0DA] bg-white shadow-[0_24px_60px_rgba(14,14,14,0.16)]"
+        className="flex max-h-[92vh] w-full max-w-[860px] flex-col overflow-hidden rounded-[28px] border border-[var(--border-hairline)] bg-[var(--bg-surface)] shadow-[0_28px_72px_rgba(0,0,0,0.22)]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#E2E0DA] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--border-hairline)] px-6 py-5 sm:px-7">
           <div>
             <h2
               id="add-piece-title"
-              className="text-[16px] font-medium tracking-[-0.02em] text-[#0E0E0E]"
+              className="text-[17px] font-semibold tracking-[-0.03em] text-[var(--ink-primary)]"
             >
               Add Wardrobe Piece
             </h2>
-            <p className="mt-0.5 text-[12px] text-[#4A4945]">
-              Images are normalized to 1200px PNG and isolated by category in
-              your browser.
+            <p className="mt-0.5 text-[12px] text-[var(--ink-muted)]">
+              Normalized to 1200px PNG and isolated by category in your browser.
             </p>
           </div>
           <button
@@ -1351,7 +1337,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
             onClick={handleClose}
             disabled={isSaving}
             aria-label="Close modal"
-            className="flex h-8 w-8 items-center justify-center border border-transparent text-[#4A4945] transition-colors hover:border-[#E2E0DA] hover:text-[#0E0E0E] disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--ink-muted)] transition-colors duration-150 hover:bg-[var(--bg-well)] hover:text-[var(--ink-primary)] disabled:opacity-40"
           >
             <X className="h-4 w-4" />
           </button>
@@ -1363,7 +1349,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
           className="grid grid-cols-1 overflow-y-auto md:grid-cols-12"
         >
           {/* Left: Upload, Category-Isolated Cutout Preview, Symmetry & Touch-Up */}
-          <div className="border-b border-[#E2E0DA] bg-[#F9F8F6] p-6 md:col-span-6 md:border-r md:border-b-0">
+          <div className="border-b border-[var(--border-hairline)] bg-[var(--bg-well)] p-6 md:col-span-6 md:border-r md:border-b-0">
             <input
               ref={fileInputRef}
               type="file"
@@ -1389,35 +1375,35 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                     fileInputRef.current?.click();
                   }
                 }}
-                className={`flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center border border-dashed px-6 text-center transition-colors ${isDragging
-                  ? "border-[#0E0E0E] bg-[#F2F1ED]"
-                  : "border-[#C8C5BD] bg-white hover:border-[#0E0E0E]"
+                className={`flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center rounded-[20px] border border-dashed px-6 text-center transition-colors duration-150 ${isDragging
+                  ? "border-[var(--ink-primary)] bg-[var(--bg-tile)]"
+                  : "border-[var(--border-mid)] bg-[var(--bg-surface)] hover:border-[var(--ink-primary)]"
                   }`}
               >
-                <div className="flex h-11 w-11 items-center justify-center border border-[#E2E0DA] bg-[#F2F1ED] text-[#0E0E0E]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-[14px] border border-[var(--border-hairline)] bg-[var(--bg-well)] text-[var(--ink-primary)]">
                   <Upload className="h-4 w-4" strokeWidth={1.5} />
                 </div>
-                <p className="mt-4 text-[13px] font-medium text-[#0E0E0E]">
+                <p className="mt-4 text-[13px] font-semibold tracking-[-0.01em] text-[var(--ink-primary)]">
                   Upload garment photo
                 </p>
-                <p className="mt-1 max-w-[26ch] text-[12px] leading-relaxed text-[#4A4945]">
+                <p className="mt-1 max-w-[26ch] text-[12px] leading-relaxed text-[var(--ink-muted)]">
                   Drop a flat-lay, store photo, or full-body outfit shot. PNG,
                   JPG, WebP, or AVIF.
                 </p>
-                <span className="mt-4 inline-flex items-center gap-1.5 border border-[#E2E0DA] bg-[#F9F8F6] px-2.5 py-1 text-[10px] font-medium tracking-[0.08em] text-[#4A4945] uppercase">
+                <span className="mt-5 inline-flex items-center gap-1.5 text-[10px] font-medium tracking-[0.14em] text-[var(--ink-muted)] uppercase">
                   <Scissors className="h-3 w-3" />
-                  Category-aware WASM cutout
+                  Category-aware cutout
                 </span>
               </div>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-3">
                 <div
                   ref={stageRef}
-                  className={`relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden border border-[#E2E0DA] p-5 ${stage === "ready" &&
+                  className={`relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-[20px] border border-[var(--border-hairline)] p-5 ${stage === "ready" &&
                     previewMode === "cutout" &&
                     !usingOriginalFallback
                     ? "cutout-checkerboard"
-                    : "bg-[#F2F1ED]"
+                    : "bg-[var(--bg-tile)]"
                     }`}
                 >
                   {stage === "processing" && (
@@ -1427,25 +1413,25 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                         <img
                           src={originalPreviewUrl}
                           alt="Original garment upload"
-                          className="max-h-full max-w-full object-contain opacity-35 blur-[2px]"
+                          className="max-h-full max-w-full object-contain opacity-30"
                         />
                       )}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#F9F8F6]/85 px-6 text-center backdrop-blur-[1px]">
-                        <Loader2 className="h-5 w-5 animate-spin text-[#0E0E0E]" />
-                        <p className="mt-3 text-[13px] font-medium text-[#0E0E0E]">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--bg-surface)]/92 px-6 text-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-[var(--ink-primary)]" />
+                        <p className="mt-3 text-[13px] font-medium text-[var(--ink-primary)]">
                           {statusLabel || "Removing background…"}
                         </p>
-                        <div className="mt-3 h-[2px] w-48 overflow-hidden bg-[#E2E0DA]">
+                        <div className="mt-3 h-[2px] w-48 overflow-hidden rounded-full bg-[var(--border-hairline)]">
                           {progressPercent !== null ? (
                             <div
-                              className="h-full bg-[#0E0E0E] transition-[width] duration-200"
+                              className="h-full bg-[var(--ink-primary)] transition-[width] duration-200"
                               style={{ width: `${progressPercent}%` }}
                             />
                           ) : (
-                            <div className="h-full w-1/3 animate-pulse bg-[#0E0E0E]" />
+                            <div className="h-full w-1/3 animate-pulse bg-[var(--ink-primary)]" />
                           )}
                         </div>
-                        <p className="mt-2 text-[11px] text-[#4A4945] tabular-nums">
+                        <p className="mt-2 text-[11px] text-[var(--ink-muted)] tabular-nums">
                           {progressPercent !== null
                             ? `${progressPercent}% · First run caches ONNX weights locally`
                             : "First run downloads WASM/ONNX models to browser cache"}
@@ -1479,7 +1465,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                               }
                               : undefined
                           }
-                          className={`max-h-full max-w-full h-auto w-auto select-none drop-shadow-[0_12px_20px_rgba(14,14,14,0.12)] ${brushMode !== "none"
+                          className={`max-h-full max-w-full h-auto w-auto select-none drop-shadow-[0_12px_20px_rgba(0,0,0,0.14)] ${brushMode !== "none"
                             ? "cursor-none touch-none"
                             : ""
                             }`}
@@ -1488,7 +1474,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                         {brushMode !== "none" && cursorOverlay.visible && (
                           <div
                             aria-hidden="true"
-                            className="pointer-events-none absolute border border-[#0E0E0E] shadow-[0_0_0_1px_rgba(255,255,255,0.9)]"
+                            className="pointer-events-none absolute border border-[#111111] shadow-[0_0_0_1.5px_rgba(255,255,255,0.92)]"
                             style={{
                               width: `${cursorOverlay.diameterPx}px`,
                               height: `${cursorOverlay.diameterPx}px`,
@@ -1521,10 +1507,10 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                           className="mb-4 max-h-40 object-contain opacity-80"
                         />
                       )}
-                      <p className="text-[13px] font-medium text-[#0E0E0E]">
+                      <p className="text-[13px] font-semibold text-[var(--ink-primary)]">
                         Background removal failed
                       </p>
-                      <p className="mt-1 max-w-[28ch] text-[12px] text-[#4A4945]">
+                      <p className="mt-1 max-w-[28ch] text-[12px] text-[var(--ink-muted)]">
                         Use the normalized original photo or retry cutout.
                       </p>
                       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -1532,7 +1518,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                           <button
                             type="button"
                             onClick={handleUseOriginalFallback}
-                            className="inline-flex h-8 items-center gap-1.5 bg-[#0E0E0E] px-3 text-[12px] font-medium text-white transition-colors hover:bg-[#2B2B29]"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-[10px] bg-[var(--btn-primary-bg)] px-3 text-[12px] font-medium text-[var(--btn-primary-fg)] transition-colors duration-150 hover:bg-[var(--btn-primary-hover)]"
                           >
                             <span>Use Original Photo</span>
                           </button>
@@ -1541,7 +1527,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                           <button
                             type="button"
                             onClick={() => void runGarmentPipeline(sourceFile)}
-                            className="inline-flex h-8 items-center gap-1.5 border border-[#E2E0DA] bg-white px-3 text-[12px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E]"
+                            className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 text-[12px] font-medium text-[var(--ink-primary)] transition-colors duration-150 hover:border-[var(--ink-primary)]"
                           >
                             <RefreshCw className="h-3.5 w-3.5" />
                             <span>Retry cutout</span>
@@ -1560,31 +1546,34 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                       handleMirrorSymmetry(symmetryInfo.recommendedDirection)
                     }
                     disabled={isSaving}
-                    className="flex w-full items-center justify-between gap-2 border border-[#C8C5BD] bg-white px-2.5 py-1.5 text-left text-[11px] text-[#4A4945] transition-colors hover:border-[#0E0E0E] hover:text-[#0E0E0E] disabled:opacity-40"
+                    className="flex w-full items-center justify-between gap-2 rounded-[12px] border border-[var(--border-mid)] bg-[var(--bg-surface)] px-3 py-2 text-left text-[11px] text-[var(--ink-secondary)] transition-colors duration-150 hover:border-[var(--ink-primary)] hover:text-[var(--ink-primary)] disabled:opacity-40"
                   >
                     <span className="inline-flex items-center gap-1.5 truncate">
-                      <FlipHorizontal2 className="h-3 w-3 shrink-0 text-[#0E0E0E]" />
+                      <FlipHorizontal2 className="h-3 w-3 shrink-0 text-[var(--ink-primary)]" />
                       <span>Uneven sleeve/edge detected</span>
                     </span>
-                    <span className="shrink-0 font-medium text-[#0E0E0E]">
+                    <span className="shrink-0 font-semibold text-[var(--ink-primary)]">
                       Mirror L ↔ R
                     </span>
                   </button>
                 )}
 
                 {/* Preview toolbar */}
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 px-0.5">
                   {stage === "ready" && !usingOriginalFallback ? (
-                    <div className="inline-flex border border-[#E2E0DA] bg-white">
+                    <div className="inline-flex items-center gap-4">
                       <button
                         type="button"
                         onClick={() => setPreviewMode("cutout")}
-                        className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${previewMode === "cutout"
-                          ? "bg-[#0E0E0E] text-white"
-                          : "text-[#4A4945] hover:text-[#0E0E0E]"
+                        className={`relative pb-1 text-[11px] font-medium tracking-[0.12em] uppercase transition-colors duration-150 ${previewMode === "cutout"
+                          ? "text-[var(--ink-primary)]"
+                          : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                           }`}
                       >
                         Cutout PNG
+                        {previewMode === "cutout" && (
+                          <span className="absolute inset-x-0 bottom-0 h-[1.5px] bg-[var(--ink-primary)]" />
+                        )}
                       </button>
                       <button
                         type="button"
@@ -1592,16 +1581,19 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                           setBrushMode("none");
                           setPreviewMode("original");
                         }}
-                        className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${previewMode === "original"
-                          ? "bg-[#0E0E0E] text-white"
-                          : "text-[#4A4945] hover:text-[#0E0E0E]"
+                        className={`relative pb-1 text-[11px] font-medium tracking-[0.12em] uppercase transition-colors duration-150 ${previewMode === "original"
+                          ? "text-[var(--ink-primary)]"
+                          : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                           }`}
                       >
                         Original
+                        {previewMode === "original" && (
+                          <span className="absolute inset-x-0 bottom-0 h-[1.5px] bg-[var(--ink-primary)]" />
+                        )}
                       </button>
                     </div>
                   ) : (
-                    <span className="truncate text-[11px] text-[#6C6A64]">
+                    <span className="truncate text-[11px] text-[var(--ink-muted)]">
                       {usingOriginalFallback
                         ? "Using normalized original photo"
                         : sourceFile?.name}
@@ -1612,31 +1604,31 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={stage === "processing" || isSaving}
-                    className="inline-flex shrink-0 items-center gap-1.5 border border-[#E2E0DA] bg-white px-2.5 py-1 text-[11px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E] disabled:opacity-40"
+                    className="inline-flex shrink-0 items-center gap-1.5 text-[11px] font-medium tracking-[0.1em] text-[var(--ink-secondary)] uppercase transition-colors duration-150 hover:text-[var(--ink-primary)] disabled:opacity-40"
                   >
-                    <ImagePlus className="h-3 w-3" />
+                    <ImagePlus className="h-3.5 w-3.5" />
                     <span>Replace</span>
                   </button>
                 </div>
 
                 {/* Stage B: Category Isolation, Edge Sensitivity, Mirror L ↔ R & Touch-Up Brush */}
                 {canShowIsolationControls && (
-                  <div className="divide-y divide-[#E2E0DA] border border-[#E2E0DA] bg-white">
+                  <div className="divide-y divide-[var(--border-hairline)] overflow-hidden rounded-[16px] border border-[var(--border-hairline)] bg-[var(--bg-surface)]">
                     {/* Isolation Scope Toggle */}
                     {semanticReady && (
-                      <div className="p-2">
+                      <div className="p-2.5">
                         <div
                           role="group"
                           aria-label="Cutout isolation scope"
-                          className="grid grid-cols-2 border border-[#E2E0DA]"
+                          className="grid grid-cols-2 rounded-[10px] bg-[var(--bg-well)] p-0.5"
                         >
                           <button
                             type="button"
                             onClick={() => setIsolationMode("category")}
                             disabled={isSaving}
-                            className={`h-7 px-2 text-[11px] font-medium transition-colors ${isolationMode === "category"
-                              ? "bg-[#0E0E0E] text-white"
-                              : "bg-white text-[#4A4945] hover:text-[#0E0E0E]"
+                            className={`h-7 rounded-[8px] px-2 text-[11px] font-medium transition-colors duration-150 ${isolationMode === "category"
+                              ? "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                              : "text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]"
                               }`}
                           >
                             Isolate {activeCategoryLabel} Only
@@ -1645,9 +1637,9 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                             type="button"
                             onClick={() => setIsolationMode("full")}
                             disabled={isSaving}
-                            className={`h-7 border-l border-[#E2E0DA] px-2 text-[11px] font-medium transition-colors ${isolationMode === "full"
-                              ? "bg-[#0E0E0E] text-white"
-                              : "bg-white text-[#4A4945] hover:text-[#0E0E0E]"
+                            className={`h-7 rounded-[8px] px-2 text-[11px] font-medium transition-colors duration-150 ${isolationMode === "full"
+                              ? "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                              : "text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]"
                               }`}
                           >
                             Full Subject
@@ -1655,7 +1647,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                         </div>
 
                         {isolationMode === "category" && targetMissing && (
-                          <p className="mt-1.5 text-[11px] leading-snug text-[#6C6A64]">
+                          <p className="mt-1.5 text-[11px] leading-snug text-[var(--ink-muted)]">
                             No {activeCategoryLabel.toLowerCase()} region
                             detected — showing full subject.
                           </p>
@@ -1664,33 +1656,33 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                     )}
 
                     {parserUnavailable && (
-                      <div className="px-2.5 py-1.5 text-[11px] text-[#6C6A64]">
+                      <div className="px-3 py-2 text-[11px] text-[var(--ink-muted)]">
                         Category parser unavailable offline — use Erase /
                         Restore or Mirror L ↔ R to refine edges.
                       </div>
                     )}
 
                     {/* Edge Sensitivity Recovery Strip (< 15ms pure Canvas remapping) */}
-                    <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-medium tracking-[0.1em] text-[#6C6A64] uppercase">
+                    <div className="flex items-center justify-between gap-2 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-medium tracking-[0.14em] text-[var(--ink-muted)] uppercase">
                           Edge
                         </span>
                         {parsedAsset?.usedStudioContrastBoost && (
-                          <span className="border border-[#E2E0DA] bg-[#F9F8F6] px-1.5 py-0.5 text-[9px] font-medium tracking-[0.06em] text-[#4A4945] uppercase">
-                            White-bg boost
+                          <span className="text-[9px] font-medium tracking-[0.1em] text-[var(--ink-secondary)] uppercase">
+                            · White-bg boost
                           </span>
                         )}
                         {parsedAsset?.usedExistingAlpha && (
-                          <span className="border border-[#E2E0DA] bg-[#F9F8F6] px-1.5 py-0.5 text-[9px] font-medium tracking-[0.06em] text-[#4A4945] uppercase">
-                            PNG alpha kept
+                          <span className="text-[9px] font-medium tracking-[0.1em] text-[var(--ink-secondary)] uppercase">
+                            · PNG alpha kept
                           </span>
                         )}
                       </div>
                       <div
                         role="group"
                         aria-label="Edge sensitivity"
-                        className="inline-flex border border-[#E2E0DA]"
+                        className="inline-flex rounded-[8px] bg-[var(--bg-well)] p-0.5"
                       >
                         {(
                           [
@@ -1698,17 +1690,16 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                             ["soft", "Soft"],
                             ["max", "Max"],
                           ] as const
-                        ).map(([preset, label], idx) => (
+                        ).map(([preset, label]) => (
                           <button
                             key={preset}
                             type="button"
                             onClick={() => setEdgeSensitivity(preset)}
                             disabled={isSaving}
                             title={`Alpha edge cutoff ${EDGE_SENSITIVITY_CUTOFFS[preset].toFixed(2)}`}
-                            className={`h-6 px-2 text-[10px] font-medium transition-colors ${idx > 0 ? "border-l border-[#E2E0DA]" : ""
-                              } ${edgeSensitivity === preset
-                                ? "bg-[#0E0E0E] text-white"
-                                : "bg-white text-[#4A4945] hover:text-[#0E0E0E]"
+                            className={`h-6 rounded-[6px] px-2.5 text-[10px] font-medium transition-colors duration-150 ${edgeSensitivity === preset
+                              ? "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                              : "text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]"
                               }`}
                           >
                             {label}
@@ -1718,8 +1709,8 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                     </div>
 
                     {/* Manual Brush Touch-Up + 1-Click Mirror L ↔ R Bar */}
-                    <div className="flex flex-wrap items-center justify-between gap-1.5 p-2">
-                      <div className="flex flex-wrap items-center gap-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 p-2.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() =>
@@ -1729,9 +1720,9 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                           }
                           disabled={isSaving}
                           aria-pressed={brushMode === "erase"}
-                          className={`inline-flex h-7 items-center gap-1 border px-2 text-[11px] font-medium transition-colors ${brushMode === "erase"
-                            ? "border-[#0E0E0E] bg-[#0E0E0E] text-white"
-                            : "border-[#E2E0DA] bg-[#F9F8F6] text-[#4A4945] hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
+                          className={`inline-flex h-7 items-center gap-1 rounded-[8px] px-2.5 text-[11px] font-medium transition-colors duration-150 ${brushMode === "erase"
+                            ? "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                            : "bg-[var(--bg-well)] text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]"
                             }`}
                         >
                           <Eraser className="h-3 w-3" />
@@ -1746,9 +1737,9 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                           }
                           disabled={isSaving}
                           aria-pressed={brushMode === "restore"}
-                          className={`inline-flex h-7 items-center gap-1 border px-2 text-[11px] font-medium transition-colors ${brushMode === "restore"
-                            ? "border-[#0E0E0E] bg-[#0E0E0E] text-white"
-                            : "border-[#E2E0DA] bg-[#F9F8F6] text-[#4A4945] hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
+                          className={`inline-flex h-7 items-center gap-1 rounded-[8px] px-2.5 text-[11px] font-medium transition-colors duration-150 ${brushMode === "restore"
+                            ? "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                            : "bg-[var(--bg-well)] text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]"
                             }`}
                         >
                           <Paintbrush className="h-3 w-3" />
@@ -1757,7 +1748,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
 
                         {/* 1-Click Mirror L ↔ R Symmetry Control */}
                         {canMirrorCategory && (
-                          <div className="inline-flex items-stretch">
+                          <div className="inline-flex items-stretch overflow-hidden rounded-[8px] border border-[var(--border-hairline)]">
                             <button
                               type="button"
                               onClick={() => handleMirrorSymmetry()}
@@ -1766,7 +1757,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                                 ? "Left → Right"
                                 : "Right → Left"
                                 } across garment center axis`}
-                              className="inline-flex h-7 items-center gap-1 border border-[#E2E0DA] bg-[#F9F8F6] px-2 text-[11px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E] hover:bg-[#0E0E0E] hover:text-white disabled:opacity-40"
+                              className="inline-flex h-7 items-center gap-1 bg-[var(--bg-well)] px-2 text-[11px] font-medium text-[var(--ink-primary)] transition-colors duration-150 hover:bg-[var(--btn-primary-bg)] hover:text-[var(--btn-primary-fg)] disabled:opacity-40"
                             >
                               <FlipHorizontal2 className="h-3 w-3" />
                               <span>Mirror L ↔ R</span>
@@ -1783,7 +1774,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                               disabled={isSaving}
                               aria-label="Toggle mirror direction"
                               title="Switch mirror direction (Left → Right vs Right → Left)"
-                              className="inline-flex h-7 items-center border border-l-0 border-[#E2E0DA] bg-white px-1.5 text-[10px] font-medium text-[#4A4945] tabular-nums transition-colors hover:border-[#0E0E0E] hover:text-[#0E0E0E] disabled:opacity-40"
+                              className="inline-flex h-7 items-center border-l border-[var(--border-hairline)] bg-[var(--bg-surface)] px-1.5 text-[10px] font-medium text-[var(--ink-secondary)] tabular-nums transition-colors duration-150 hover:text-[var(--ink-primary)] disabled:opacity-40"
                             >
                               {mirrorDirection === "left-to-right"
                                 ? "L→R"
@@ -1798,7 +1789,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                           <div
                             role="group"
                             aria-label="Brush size"
-                            className="inline-flex border border-[#E2E0DA]"
+                            className="inline-flex rounded-[8px] bg-[var(--bg-well)] p-0.5"
                           >
                             {(
                               [
@@ -1806,15 +1797,14 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                                 ["md", "M"],
                                 ["lg", "L"],
                               ] as const
-                            ).map(([preset, label], idx) => (
+                            ).map(([preset, label]) => (
                               <button
                                 key={preset}
                                 type="button"
                                 onClick={() => setBrushSize(preset)}
-                                className={`h-7 w-6 text-[10px] font-medium transition-colors ${idx > 0 ? "border-l border-[#E2E0DA]" : ""
-                                  } ${brushSize === preset
-                                    ? "bg-[#0E0E0E] text-white"
-                                    : "bg-white text-[#4A4945] hover:text-[#0E0E0E]"
+                                className={`h-6 w-6 rounded-[6px] text-[10px] font-medium transition-colors duration-150 ${brushSize === preset
+                                  ? "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                                  : "text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]"
                                   }`}
                               >
                                 {label}
@@ -1830,7 +1820,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                             disabled={isSaving}
                             title="Undo last edit"
                             aria-label="Undo last edit"
-                            className="inline-flex h-7 w-7 items-center justify-center border border-[#E2E0DA] bg-white text-[#4A4945] transition-colors hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-[8px] bg-[var(--bg-well)] text-[var(--ink-secondary)] transition-colors duration-150 hover:text-[var(--ink-primary)]"
                           >
                             <Undo2 className="h-3 w-3" />
                           </button>
@@ -1843,7 +1833,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                             disabled={isSaving}
                             title="Reset cutout edits"
                             aria-label="Reset cutout edits"
-                            className="inline-flex h-7 items-center gap-1 border border-[#E2E0DA] bg-white px-2 text-[10px] font-medium tracking-[0.04em] text-[#4A4945] uppercase transition-colors hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
+                            className="inline-flex h-7 items-center gap-1 rounded-[8px] bg-[var(--bg-well)] px-2 text-[10px] font-medium tracking-[0.06em] text-[var(--ink-secondary)] uppercase transition-colors duration-150 hover:text-[var(--ink-primary)]"
                           >
                             <RotateCcw className="h-3 w-3" />
                             <span>Reset</span>
@@ -1858,12 +1848,12 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
           </div>
 
           {/* Right: Piece Metadata Form */}
-          <div className="flex flex-col justify-between p-6 md:col-span-6">
+          <div className="flex flex-col justify-between p-6 sm:p-7 md:col-span-6">
             <div className="space-y-5">
               <div>
                 <label
                   htmlFor="piece-name"
-                  className="mb-2 block text-[11px] font-medium tracking-[0.1em] text-[#4A4945] uppercase"
+                  className="mb-2 block text-[10px] font-medium tracking-[0.14em] text-[var(--ink-muted)] uppercase"
                 >
                   Piece name
                 </label>
@@ -1876,17 +1866,17 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Heavyweight Boxy Tee"
                   disabled={isSaving}
-                  className="h-11 w-full border border-[#E2E0DA] bg-white px-3.5 text-[14px] text-[#0E0E0E] placeholder:text-[#6C6A64] transition-colors focus:border-[#0E0E0E] disabled:bg-[#F9F8F6]"
+                  className="h-11 w-full rounded-[12px] border border-[var(--border-hairline)] bg-[var(--bg-well)] px-3.5 text-[14px] text-[var(--ink-primary)] placeholder:text-[var(--ink-muted)] transition-colors duration-150 focus:border-[var(--ink-primary)] focus:bg-[var(--bg-surface)] disabled:opacity-50"
                 />
               </div>
 
               <div>
                 <div className="mb-2 flex items-baseline justify-between">
-                  <span className="block text-[11px] font-medium tracking-[0.1em] text-[#4A4945] uppercase">
+                  <span className="block text-[10px] font-medium tracking-[0.14em] text-[var(--ink-muted)] uppercase">
                     Category
                   </span>
                   {semanticReady && !usingOriginalFallback && (
-                    <span className="text-[10px] tracking-[0.06em] text-[#6C6A64] uppercase">
+                    <span className="text-[10px] tracking-[0.1em] text-[var(--ink-muted)] uppercase">
                       Instant re-cut
                     </span>
                   )}
@@ -1900,9 +1890,9 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                         type="button"
                         onClick={() => setCategory(cat)}
                         disabled={isSaving}
-                        className={`h-9 border px-2.5 text-[12px] font-medium transition-colors disabled:opacity-40 ${selected
-                          ? "border-[#0E0E0E] bg-[#0E0E0E] text-white"
-                          : "border-[#E2E0DA] bg-white text-[#4A4945] hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
+                        className={`h-9 rounded-[10px] border px-2.5 text-[12px] font-medium transition-colors duration-150 disabled:opacity-40 ${selected
+                          ? "border-[var(--btn-primary-bg)] bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                          : "border-[var(--border-hairline)] bg-[var(--bg-surface)] text-[var(--ink-secondary)] hover:border-[var(--ink-primary)] hover:text-[var(--ink-primary)]"
                           }`}
                       >
                         {CATEGORY_LABELS[cat]}
@@ -1912,57 +1902,10 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                 </div>
               </div>
 
-              <div>
-                <div className="mb-2 flex items-baseline justify-between">
-                  <label
-                    htmlFor="piece-price"
-                    className="block text-[11px] font-medium tracking-[0.1em] text-[#4A4945] uppercase"
-                  >
-                    Purchase price (PHP)
-                  </label>
-                  <span className="text-[11px] text-[#6C6A64]">Optional</span>
-                </div>
-                <div className="relative flex items-center">
-                  <span className="pointer-events-none absolute left-3.5 text-[14px] text-[#4A4945]">
-                    ₱
-                  </span>
-                  <input
-                    id="piece-price"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    value={priceInput}
-                    onChange={(e) => setPriceInput(e.target.value)}
-                    placeholder="1490 (leave blank for try-on only)"
-                    disabled={isSaving}
-                    className="h-11 w-full border border-[#E2E0DA] bg-white py-2 pr-3.5 pl-8 text-[14px] text-[#0E0E0E] tabular-nums placeholder:text-[#6C6A64] transition-colors focus:border-[#0E0E0E] disabled:bg-[#F9F8F6]"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t border-[#E2E0DA] pt-4">
-                <div className="flex items-baseline justify-between text-[12px]">
-                  <span className="text-[10px] font-medium tracking-[0.12em] text-[#6C6A64] uppercase">
-                    Initial cost / wear
-                  </span>
-                  <span className="text-[15px] font-semibold tracking-[-0.02em] text-[#0E0E0E] tabular-nums">
-                    {hasValidPrice
-                      ? `${formatPeso(parsedPricePreview)}/wear`
-                      : "Not tracked"}
-                  </span>
-                </div>
-                <p className="mt-1.5 text-[11px] text-[#6C6A64]">
-                  {hasValidPrice
-                    ? "Updates automatically each time you log a wear."
-                    : "Leave price blank to skip the ₱/wear badge and try on right away."}
-                </p>
-              </div>
-
               {error && (
                 <div
                   role="alert"
-                  className="flex flex-col gap-2 border border-[#D9B4B2] bg-[#FAF2F2] px-3.5 py-2.5 text-[12px] leading-snug text-[#8C1D18]"
+                  className="flex flex-col gap-2 rounded-[12px] border border-[var(--status-danger-border)] bg-[var(--status-danger-bg)] px-3.5 py-2.5 text-[12px] leading-snug text-[var(--status-danger-ink)]"
                 >
                   <span>{error}</span>
                   {stage === "error" && normalizedOriginalBlob && (
@@ -1970,7 +1913,7 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
                       <button
                         type="button"
                         onClick={handleUseOriginalFallback}
-                        className="inline-flex h-7 items-center bg-[#0E0E0E] px-2.5 text-[11px] font-medium text-white transition-colors hover:bg-[#2B2B29]"
+                        className="inline-flex h-7 items-center rounded-[8px] bg-[var(--btn-primary-bg)] px-2.5 text-[11px] font-medium text-[var(--btn-primary-fg)] transition-colors duration-150 hover:bg-[var(--btn-primary-hover)]"
                       >
                         Use Original Photo
                       </button>
@@ -1980,19 +1923,19 @@ export function UploadCutoutModal({ open, onClose }: UploadCutoutModalProps) {
               )}
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-[#E2E0DA] pt-4">
+            <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-[var(--border-hairline)] pt-4">
               <button
                 type="button"
                 onClick={handleClose}
                 disabled={isSaving}
-                className="h-10 border border-[#E2E0DA] bg-white px-4 text-[12px] font-medium text-[#4A4945] transition-colors hover:border-[#0E0E0E] hover:text-[#0E0E0E] disabled:opacity-40"
+                className="h-10 rounded-[12px] px-4 text-[12px] font-medium text-[var(--ink-secondary)] transition-colors duration-150 hover:bg-[var(--bg-well)] hover:text-[var(--ink-primary)] disabled:opacity-40"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={stage !== "ready" || isSaving}
-                className="inline-flex h-10 items-center gap-2 bg-[#0E0E0E] px-5 text-[12px] font-medium text-white transition-colors hover:bg-[#2B2B29] disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-[var(--btn-primary-bg)] px-5 text-[12px] font-medium text-[var(--btn-primary-fg)] transition-colors duration-150 hover:bg-[var(--btn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isSaving ? (
                   <>

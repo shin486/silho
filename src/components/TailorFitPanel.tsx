@@ -41,6 +41,10 @@ interface TailorFitPanelProps {
   showMiniPreview?: boolean;
   disabled?: boolean;
   defaultExpanded?: boolean;
+  expanded?: boolean;
+  onExpandedChange?: (expanded: boolean) => void;
+  hideHeader?: boolean;
+  hideOuterwearStyle?: boolean;
   onActiveGuideChange?: (guide: TailorGuideKind) => void;
 }
 
@@ -99,22 +103,22 @@ const OUTERWEAR_STYLE_OPTIONS: readonly {
   label: string;
   hint: string;
 }[] = [
-  {
-    id: "open-front",
-    label: "Open Front",
-    hint: "Unzipped · exposes shirt front & hem",
-  },
-  {
-    id: "collar-hem-peek",
-    label: "Collar + Hem",
-    hint: "Zipped · crewneck collar + hem peek",
-  },
-  {
-    id: "collar-only",
-    label: "Collar Only",
-    hint: "Zipped · crewneck only (tucked waist)",
-  },
-];
+    {
+      id: "open-front",
+      label: "Open Front",
+      hint: "Unzipped · exposes shirt front & hem",
+    },
+    {
+      id: "collar-hem-peek",
+      label: "Collar + Hem",
+      hint: "Zipped · crewneck collar + hem peek",
+    },
+    {
+      id: "collar-only",
+      label: "Collar Only",
+      hint: "Zipped · crewneck only (tucked waist)",
+    },
+  ];
 
 function formatTopLengthValue(topCropPct: number): string {
   if (topCropPct < 0) return `+${Math.abs(topCropPct)}%`;
@@ -164,7 +168,7 @@ function PreviewCutLayer({
           width: "100%",
           height: `${uncroppedHeightRatioPct}%`,
         }}
-        className="block object-fill object-top mix-blend-multiply"
+        className="block object-fill object-top mix-blend-multiply dark:mix-blend-normal"
       />
     </div>
   );
@@ -187,9 +191,25 @@ export function TailorFitPanel({
   showMiniPreview = false,
   disabled = false,
   defaultExpanded = false,
+  expanded: controlledExpanded,
+  onExpandedChange,
+  hideHeader = false,
+  hideOuterwearStyle = false,
   onActiveGuideChange,
 }: TailorFitPanelProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [uncontrolledExpanded, setUncontrolledExpanded] =
+    useState(defaultExpanded);
+  const expanded =
+    controlledExpanded !== undefined
+      ? controlledExpanded
+      : uncontrolledExpanded;
+  const setExpanded = (next: boolean | ((prev: boolean) => boolean)) => {
+    const resolved = typeof next === "function" ? next(expanded) : next;
+    if (controlledExpanded === undefined) {
+      setUncontrolledExpanded(resolved);
+    }
+    onExpandedChange?.(resolved);
+  };
   const [previewTab, setPreviewTab] = useState<"preview" | "ai-input">(
     "preview"
   );
@@ -263,69 +283,107 @@ export function TailorFitPanel({
   }
 
   const telemetryText = hasBoth
-    ? `${fit.tuckMode === "tucked" ? "TUCKED IN" : "UNTUCKED"} · ${
-        renderMode === "composite"
-          ? "1-PASS COMPOSITE"
-          : hasLayeredOuterwear
-            ? `2-PASS · ${OUTERWEAR_STYLE_LABELS[fit.outerwearStyle].toUpperCase()}`
-            : "2-PASS SEPARATE"
-      }`
+    ? `${fit.tuckMode === "tucked" ? "TUCKED IN" : "UNTUCKED"} · ${renderMode === "composite"
+      ? "1-PASS COMPOSITE"
+      : hasLayeredOuterwear
+        ? `2-PASS · ${OUTERWEAR_STYLE_LABELS[fit.outerwearStyle].toUpperCase()}`
+        : "2-PASS SEPARATE"
+    }`
     : hasLayeredOuterwear
       ? `LAYERED · ${OUTERWEAR_STYLE_LABELS[fit.outerwearStyle].toUpperCase()}`
       : hasUpper
         ? "TOP · 1:1 TRIMMED"
         : "BOTTOM · 1:1 TRIMMED";
 
-  return (
-    <div className="mt-3 border border-[#E2E0DA] bg-[#F9F8F6]">
-      {/* Compact Header Row */}
-      <div className="flex items-center justify-between gap-2 px-3 py-2">
-        <button
-          type="button"
-          onClick={() => setExpanded((prev) => !prev)}
-          aria-expanded={expanded}
-          className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
-        >
-          <span className="flex min-w-0 items-center gap-2">
-            <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-[#4A4945]" />
-            <span className="shrink-0 text-[11px] font-medium tracking-[0.04em] text-[#0E0E0E] uppercase">
-              Tailor Fit
-            </span>
-            {isModified && summaryText && (
-              <span className="truncate border border-[#E2E0DA] bg-white px-1.5 py-0.5 text-[10px] font-medium text-[#0E0E0E] tabular-nums">
-                {summaryText}
-              </span>
-            )}
-          </span>
-          <ChevronDown
-            aria-hidden="true"
-            className={`h-3.5 w-3.5 shrink-0 text-[#4A4945] transition-transform duration-150 ${expanded ? "rotate-180" : ""
-              }`}
-          />
-        </button>
+  if (hideHeader && !expanded) {
+    return null;
+  }
 
-        {isModified && (
+  return (
+    <div
+      className={
+        hideHeader
+          ? "mt-4 border-t border-[var(--border-hairline)] pt-4"
+          : "mt-4 overflow-hidden rounded-[16px] border border-[var(--border-hairline)] bg-[var(--bg-well)]"
+      }
+    >
+      {/* Compact Header Row (shown when standalone, e.g. Layer Board) */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between gap-2 px-3.5 py-2.5">
           <button
             type="button"
-            disabled={disabled}
-            onClick={() => {
-              setPreviewTab("preview");
-              onReset();
-              onActiveGuideChange?.(null);
-            }}
-            className="inline-flex h-6 shrink-0 items-center gap-1 border border-[#E2E0DA] bg-white px-2 text-[10px] font-medium text-[#4A4945] transition-colors hover:border-[#0E0E0E] hover:text-[#0E0E0E] disabled:opacity-40"
+            onClick={() => setExpanded((prev) => !prev)}
+            aria-expanded={expanded}
+            className="flex min-w-0 flex-1 items-center justify-between gap-2 text-left"
           >
-            <RotateCcw className="h-2.5 w-2.5" />
-            <span>Reset</span>
+            <span className="flex min-w-0 items-center gap-2">
+              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 text-[var(--ink-muted)]" />
+              <span className="shrink-0 text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-primary)] uppercase">
+                Tailor Fit
+              </span>
+              {isModified && summaryText && (
+                <span className="truncate text-[10px] font-medium text-[var(--ink-muted)] tabular-nums">
+                  · {summaryText}
+                </span>
+              )}
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={`h-3.5 w-3.5 shrink-0 text-[var(--ink-muted)] transition-transform duration-150 ${expanded ? "rotate-180" : ""
+                }`}
+            />
           </button>
-        )}
-      </div>
+
+          {isModified && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                setPreviewTab("preview");
+                onReset();
+                onActiveGuideChange?.(null);
+              }}
+              className="inline-flex h-6 shrink-0 items-center gap-1 text-[10px] font-semibold tracking-[0.12em] text-[var(--ink-muted)] uppercase transition-colors hover:text-[var(--ink-primary)] disabled:opacity-40"
+            >
+              <RotateCcw className="h-2.5 w-2.5" />
+              <span>Reset</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Collapsible Drawer */}
       {expanded && (
-        <div className="space-y-4 border-t border-[#E2E0DA] bg-white px-3.5 py-3.5">
+        <div
+          className={
+            hideHeader
+              ? "space-y-4"
+              : "space-y-4 border-t border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 py-4"
+          }
+        >
+          {hideHeader && isModified && (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-medium tracking-[0.14em] text-[var(--ink-muted)] uppercase tabular-nums">
+                {summaryText}
+              </span>
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => {
+                  setPreviewTab("preview");
+                  onReset();
+                  onActiveGuideChange?.(null);
+                }}
+                className="inline-flex items-center gap-1 text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase transition-colors hover:text-[var(--ink-primary)] disabled:opacity-40"
+              >
+                <RotateCcw className="h-2.5 w-2.5" />
+                <span>Reset Fit</span>
+              </button>
+            </div>
+          )}
+
           {!hasAnyPiece ? (
-            <p className="text-[11px] leading-relaxed text-[#6C6A64]">
+            <p className="text-[12px] leading-relaxed text-[var(--ink-muted)]">
               Select an Upper or Lower garment to customize tuck, length, crop,
               and silhouette width.
             </p>
@@ -333,13 +391,13 @@ export function TailorFitPanel({
             <>
               {/* True 1:1 Trimmed 2:3 Live Cut Preview (AI Try-On Mode) */}
               {showMiniPreview && (upperItem || lowerItem) && (
-                <div className="flex flex-col items-center border border-[#E2E0DA] bg-[#F9F8F6] px-3 py-3">
-                  <div className="mb-2 flex w-full flex-wrap items-center justify-between gap-1.5">
-                    <span className="text-[9px] font-medium tracking-[0.12em] text-[#6C6A64] uppercase">
-                      Live Cut Preview · 2:3
+                <div className="flex flex-col items-center rounded-[16px] bg-[var(--bg-well)] px-3.5 py-3.5">
+                  <div className="mb-2.5 flex w-full flex-wrap items-center justify-between gap-1.5">
+                    <span className="text-[10px] font-medium tracking-[0.14em] text-[var(--ink-muted)] uppercase">
+                      Live Cut · 2:3
                     </span>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2.5">
                       {showCleanMaskBadge && (
                         <span
                           title={
@@ -347,9 +405,9 @@ export function TailorFitPanel({
                               ? "Clean Swap enabled: masks out original clothes before draping"
                               : "Auto Clean-Mask active for strongly cropped/slim single-top renders"
                           }
-                          className="border border-[#0E0E0E]/20 bg-white px-1.5 py-0.5 text-[9px] font-medium text-[#0E0E0E]"
+                          className="text-[10px] font-medium tracking-[0.1em] text-[var(--ink-primary)] uppercase"
                         >
-                          {cleanSwap ? "Clean-Mask ON" : "Auto Clean-Mask ON"}
+                          {cleanSwap ? "Clean-Mask" : "Auto Mask"}
                         </span>
                       )}
 
@@ -357,14 +415,14 @@ export function TailorFitPanel({
                         <div
                           role="group"
                           aria-label="Toggle live preview or AI input sheet"
-                          className="inline-flex border border-[#E2E0DA] bg-white"
+                          className="inline-flex items-center gap-2.5"
                         >
                           <button
                             type="button"
                             onClick={() => setPreviewTab("preview")}
-                            className={`px-1.5 py-0.5 text-[9px] font-medium transition-colors ${activePreviewTab === "preview"
-                              ? "bg-[#0E0E0E] text-white"
-                              : "text-[#4A4945] hover:text-[#0E0E0E]"
+                            className={`text-[10px] font-semibold tracking-[0.12em] uppercase transition-colors ${activePreviewTab === "preview"
+                              ? "border-b border-[var(--ink-primary)] text-[var(--ink-primary)]"
+                              : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                               }`}
                           >
                             Preview
@@ -372,12 +430,12 @@ export function TailorFitPanel({
                           <button
                             type="button"
                             onClick={() => setPreviewTab("ai-input")}
-                            className={`px-1.5 py-0.5 text-[9px] font-medium transition-colors ${activePreviewTab === "ai-input"
-                              ? "bg-[#0E0E0E] text-white"
-                              : "text-[#4A4945] hover:text-[#0E0E0E]"
+                            className={`text-[10px] font-semibold tracking-[0.12em] uppercase transition-colors ${activePreviewTab === "ai-input"
+                              ? "border-b border-[var(--ink-primary)] text-[var(--ink-primary)]"
+                              : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                               }`}
                           >
-                            AI Input
+                            Input Sheet
                           </button>
                         </div>
                       )}
@@ -385,7 +443,7 @@ export function TailorFitPanel({
                   </div>
 
                   {/* Exact 2:3 Reference Canvas matching backend sharp renderTailoredCanvas */}
-                  <div className="relative aspect-[2/3] w-[160px] overflow-hidden border border-[#E2E0DA] bg-[#F2F1ED]">
+                  <div className="relative aspect-[2/3] w-[156px] overflow-hidden rounded-[12px] border border-[var(--border-hairline)] bg-[var(--bg-tile)]">
                     {activePreviewTab === "ai-input" && lastCompositeUrl ? (
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -395,15 +453,15 @@ export function TailorFitPanel({
                           draggable={false}
                           className="h-full w-full bg-white object-contain"
                         />
-                        <span className="pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap border border-[#E2E0DA] bg-white/95 px-1.5 py-0.5 text-[8px] font-medium tracking-[0.06em] text-[#0E0E0E] uppercase">
-                          Exact 576×864 AI Sheet
+                        <span className="pointer-events-none absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[6px] bg-[#141415] px-2 py-0.5 text-[8px] font-medium tracking-[0.08em] text-white uppercase">
+                          576×864 Sheet
                         </span>
                       </>
                     ) : (
                       <>
                         {hasLayeredOuterwear &&
-                        layeredUpperPreview.ready &&
-                        previewGeometry.upper ? (
+                          layeredUpperPreview.ready &&
+                          previewGeometry.upper ? (
                           <PreviewCutLayer
                             src={layeredUpperPreview.src}
                             alt={`${outerwearItem!.name} over ${upperItem!.name}`}
@@ -433,7 +491,7 @@ export function TailorFitPanel({
                                   x: Math.max(
                                     0.03,
                                     previewGeometry.upper.x -
-                                      previewGeometry.upper.width * 0.06
+                                    previewGeometry.upper.width * 0.06
                                   ),
                                   y: Math.max(
                                     0.02,
@@ -499,8 +557,8 @@ export function TailorFitPanel({
                             }}
                             className="pointer-events-none absolute inset-x-0 z-30 -translate-y-1/2"
                           >
-                            <div className="w-full border-t border-dashed border-[#0E0E0E]/30" />
-                            <span className="absolute right-1 -top-3.5 bg-[#F2F1ED]/90 px-1 text-[8px] font-medium tracking-[0.08em] text-[#6C6A64] uppercase">
+                            <div className="w-full border-t border-dashed border-[var(--ink-primary)]/35" />
+                            <span className="absolute right-1 -top-3.5 bg-[var(--bg-tile)] px-1 text-[8px] font-medium tracking-[0.1em] text-[var(--ink-muted)] uppercase">
                               Waist
                             </span>
                           </div>
@@ -509,14 +567,11 @@ export function TailorFitPanel({
                     )}
                   </div>
 
-                  <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 text-[9px] font-medium tracking-[0.08em] text-[#4A4945] uppercase tabular-nums">
+                  <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2 text-[9px] font-medium tracking-[0.12em] text-[var(--ink-muted)] uppercase tabular-nums">
                     <span>{telemetryText}</span>
                     {formatEngineBadgeLabel(lastEngine) && (
-                      <span
-                        title={`Last render engine: ${formatEngineBadgeLabel(lastEngine)}`}
-                        className="border border-[#E2E0DA] bg-white px-1.5 py-0.5 text-[8px] font-medium tracking-[0.06em] text-[#0E0E0E]"
-                      >
-                        {formatEngineBadgeLabel(lastEngine)}
+                      <span className="text-[var(--ink-primary)]">
+                        · {formatEngineBadgeLabel(lastEngine)}
                       </span>
                     )}
                   </div>
@@ -524,13 +579,13 @@ export function TailorFitPanel({
               )}
 
               {/* Outerwear Layering Style (when both Top + Outerwear are selected) */}
-              {hasLayeredOuterwear && (
+              {hasLayeredOuterwear && !hideOuterwearStyle && (
                 <div>
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-medium tracking-[0.12em] text-[#6C6A64] uppercase">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase">
                       Outerwear Layer
                     </span>
-                    <span className="truncate text-[10px] text-[#4A4945]">
+                    <span className="truncate text-[10px] text-[var(--ink-muted)]">
                       {
                         OUTERWEAR_STYLE_OPTIONS.find(
                           (o) => o.id === fit.outerwearStyle
@@ -541,7 +596,7 @@ export function TailorFitPanel({
                   <div
                     role="group"
                     aria-label="Outerwear layering style"
-                    className="grid grid-cols-3 border border-[#E2E0DA] bg-[#F9F8F6] p-0.5"
+                    className="grid grid-cols-3 rounded-[10px] bg-[var(--bg-well)] p-1"
                   >
                     {OUTERWEAR_STYLE_OPTIONS.map((option) => {
                       const active = fit.outerwearStyle === option.id;
@@ -553,9 +608,9 @@ export function TailorFitPanel({
                           onClick={() =>
                             updateFit({ outerwearStyle: option.id })
                           }
-                          className={`h-7 px-1 text-[10px] font-medium transition-colors disabled:opacity-40 sm:text-[11px] ${active
-                            ? "bg-[#0E0E0E] text-white"
-                            : "text-[#4A4945] hover:text-[#0E0E0E]"
+                          className={`h-7 rounded-[8px] px-1 text-[10px] font-medium transition-colors duration-150 disabled:opacity-40 sm:text-[11px] ${active
+                            ? "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                            : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                             }`}
                         >
                           {option.label}
@@ -568,12 +623,18 @@ export function TailorFitPanel({
 
               {/* Waist Style */}
               {hasBoth && (
-                <div className={hasLayeredOuterwear ? "border-t border-[#E2E0DA] pt-3" : ""}>
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-[10px] font-medium tracking-[0.12em] text-[#6C6A64] uppercase">
+                <div
+                  className={
+                    hasLayeredOuterwear && !hideOuterwearStyle
+                      ? "border-t border-[var(--border-hairline)] pt-3.5"
+                      : ""
+                  }
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase">
                       Waist Style
                     </span>
-                    <span className="text-[10px] text-[#4A4945]">
+                    <span className="text-[10px] text-[var(--ink-muted)]">
                       {renderMode === "composite"
                         ? "1-Pass Composite"
                         : fit.tuckMode === "tucked"
@@ -588,7 +649,7 @@ export function TailorFitPanel({
                   <div
                     role="group"
                     aria-label="Waist tuck style"
-                    className="grid grid-cols-2 border border-[#E2E0DA] bg-[#F9F8F6] p-0.5"
+                    className="grid grid-cols-2 rounded-[10px] bg-[var(--bg-well)] p-1"
                   >
                     {(
                       [
@@ -603,9 +664,9 @@ export function TailorFitPanel({
                           type="button"
                           disabled={disabled}
                           onClick={() => handleTuckMode(option.id)}
-                          className={`h-7 text-[11px] font-medium transition-colors disabled:opacity-40 ${active
-                            ? "bg-[#0E0E0E] text-white"
-                            : "text-[#4A4945] hover:text-[#0E0E0E]"
+                          className={`h-7 rounded-[8px] text-[11px] font-medium transition-colors duration-150 disabled:opacity-40 ${active
+                            ? "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                            : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                             }`}
                         >
                           {option.label}
@@ -618,23 +679,23 @@ export function TailorFitPanel({
 
               {/* Top Cut Controls */}
               {hasUpper && (
-                <div className="space-y-3 border-t border-[#E2E0DA] pt-3 first:border-t-0 first:pt-0">
+                <div className="space-y-3 border-t border-[var(--border-hairline)] pt-3.5 first:border-t-0 first:pt-0">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-medium tracking-[0.12em] text-[#6C6A64] uppercase">
+                    <span className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase">
                       Top Cut
                     </span>
-                    <span className="text-[10px] text-[#4A4945] tabular-nums">
+                    <span className="text-[10px] text-[var(--ink-muted)] tabular-nums">
                       {formatTopLengthValue(fit.topCropPct)} ·{" "}
                       {fit.topWidthScale.toFixed(2)}×
                     </span>
                   </div>
 
                   <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <span className="text-[11px] text-[#4A4945]">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-[11px] text-[var(--ink-secondary)]">
                         Top Length
                       </span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-3">
                         {TOP_LENGTH_PRESETS.map((preset) => {
                           const active = preset.isActive(fit);
                           return (
@@ -643,9 +704,9 @@ export function TailorFitPanel({
                               type="button"
                               disabled={disabled}
                               onClick={() => updateFit(preset.patch, "top-crop")}
-                              className={`h-6 border px-2 text-[10px] font-medium transition-colors disabled:opacity-40 ${active
-                                ? "border-[#0E0E0E] bg-[#0E0E0E] text-white"
-                                : "border-[#E2E0DA] bg-white text-[#4A4945] hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
+                              className={`pb-0.5 text-[10px] font-semibold tracking-[0.08em] uppercase transition-colors duration-150 disabled:opacity-40 ${active
+                                ? "border-b-[1.5px] border-[var(--ink-primary)] text-[var(--ink-primary)]"
+                                : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                                 }`}
                             >
                               {preset.label}
@@ -654,7 +715,7 @@ export function TailorFitPanel({
                         })}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
                       <input
                         type="range"
                         aria-label="Top length and crop percentage"
@@ -670,9 +731,9 @@ export function TailorFitPanel({
                             "top-crop"
                           )
                         }
-                        className="h-1 flex-1 cursor-pointer appearance-none bg-[#E2E0DA] accent-[#0E0E0E] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--border-hairline)] accent-[var(--ink-primary)] disabled:cursor-not-allowed disabled:opacity-40"
                       />
-                      <span className="w-10 text-right text-[11px] font-medium text-[#0E0E0E] tabular-nums">
+                      <span className="w-10 text-right text-[11px] font-semibold text-[var(--ink-primary)] tabular-nums">
                         {formatTopLengthValue(fit.topCropPct)}
                       </span>
                     </div>
@@ -680,10 +741,10 @@ export function TailorFitPanel({
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-[#4A4945]">
+                      <span className="text-[11px] text-[var(--ink-secondary)]">
                         Top Width
                       </span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-3">
                         {TOP_WIDTH_PRESETS.map((preset) => {
                           const active =
                             Math.abs(fit.topWidthScale - preset.value) < 0.005;
@@ -695,9 +756,9 @@ export function TailorFitPanel({
                               onClick={() =>
                                 updateFit({ topWidthScale: preset.value })
                               }
-                              className={`h-6 border px-2 text-[10px] font-medium transition-colors disabled:opacity-40 ${active
-                                ? "border-[#0E0E0E] bg-[#0E0E0E] text-white"
-                                : "border-[#E2E0DA] bg-white text-[#4A4945] hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
+                              className={`pb-0.5 text-[10px] font-semibold tracking-[0.08em] uppercase transition-colors duration-150 disabled:opacity-40 ${active
+                                ? "border-b-[1.5px] border-[var(--ink-primary)] text-[var(--ink-primary)]"
+                                : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                                 }`}
                             >
                               {preset.label}
@@ -706,7 +767,7 @@ export function TailorFitPanel({
                         })}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
                       <input
                         type="range"
                         aria-label="Top width scale"
@@ -718,9 +779,9 @@ export function TailorFitPanel({
                         onChange={(e) =>
                           updateFit({ topWidthScale: Number(e.target.value) })
                         }
-                        className="h-1 flex-1 cursor-pointer appearance-none bg-[#E2E0DA] accent-[#0E0E0E] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--border-hairline)] accent-[var(--ink-primary)] disabled:cursor-not-allowed disabled:opacity-40"
                       />
-                      <span className="w-10 text-right text-[11px] font-medium text-[#0E0E0E] tabular-nums">
+                      <span className="w-10 text-right text-[11px] font-semibold text-[var(--ink-primary)] tabular-nums">
                         {fit.topWidthScale.toFixed(2)}×
                       </span>
                     </div>
@@ -730,12 +791,12 @@ export function TailorFitPanel({
 
               {/* Bottom Cut Controls */}
               {hasLower && (
-                <div className="space-y-3 border-t border-[#E2E0DA] pt-3 first:border-t-0 first:pt-0">
+                <div className="space-y-3 border-t border-[var(--border-hairline)] pt-3.5 first:border-t-0 first:pt-0">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-medium tracking-[0.12em] text-[#6C6A64] uppercase">
+                    <span className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase">
                       Bottom Cut
                     </span>
-                    <span className="text-[10px] text-[#4A4945] tabular-nums">
+                    <span className="text-[10px] text-[var(--ink-muted)] tabular-nums">
                       {fit.bottomCropPct > 0 ? `-${fit.bottomCropPct}%` : "0%"}{" "}
                       · {fit.bottomWidthScale.toFixed(2)}×
                     </span>
@@ -743,10 +804,10 @@ export function TailorFitPanel({
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-[#4A4945]">
+                      <span className="text-[11px] text-[var(--ink-secondary)]">
                         Hem Crop
                       </span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-3">
                         {BOTTOM_CROP_PRESETS.map((preset) => {
                           const active = fit.bottomCropPct === preset.value;
                           return (
@@ -760,9 +821,9 @@ export function TailorFitPanel({
                                   "bottom-crop"
                                 )
                               }
-                              className={`h-6 border px-2 text-[10px] font-medium transition-colors disabled:opacity-40 ${active
-                                ? "border-[#0E0E0E] bg-[#0E0E0E] text-white"
-                                : "border-[#E2E0DA] bg-white text-[#4A4945] hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
+                              className={`pb-0.5 text-[10px] font-semibold tracking-[0.08em] uppercase transition-colors duration-150 disabled:opacity-40 ${active
+                                ? "border-b-[1.5px] border-[var(--ink-primary)] text-[var(--ink-primary)]"
+                                : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                                 }`}
                             >
                               {preset.label}
@@ -771,7 +832,7 @@ export function TailorFitPanel({
                         })}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
                       <input
                         type="range"
                         aria-label="Bottom hem crop percentage"
@@ -789,9 +850,9 @@ export function TailorFitPanel({
                             "bottom-crop"
                           )
                         }
-                        className="h-1 flex-1 cursor-pointer appearance-none bg-[#E2E0DA] accent-[#0E0E0E] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--border-hairline)] accent-[var(--ink-primary)] disabled:cursor-not-allowed disabled:opacity-40"
                       />
-                      <span className="w-10 text-right text-[11px] font-medium text-[#0E0E0E] tabular-nums">
+                      <span className="w-10 text-right text-[11px] font-semibold text-[var(--ink-primary)] tabular-nums">
                         {fit.bottomCropPct > 0 ? `-${fit.bottomCropPct}%` : "0%"}
                       </span>
                     </div>
@@ -799,10 +860,10 @@ export function TailorFitPanel({
 
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-[#4A4945]">
+                      <span className="text-[11px] text-[var(--ink-secondary)]">
                         Leg Width
                       </span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-3">
                         {BOTTOM_WIDTH_PRESETS.map((preset) => {
                           const active =
                             Math.abs(fit.bottomWidthScale - preset.value) <
@@ -815,9 +876,9 @@ export function TailorFitPanel({
                               onClick={() =>
                                 updateFit({ bottomWidthScale: preset.value })
                               }
-                              className={`h-6 border px-2 text-[10px] font-medium transition-colors disabled:opacity-40 ${active
-                                ? "border-[#0E0E0E] bg-[#0E0E0E] text-white"
-                                : "border-[#E2E0DA] bg-white text-[#4A4945] hover:border-[#0E0E0E] hover:text-[#0E0E0E]"
+                              className={`pb-0.5 text-[10px] font-semibold tracking-[0.08em] uppercase transition-colors duration-150 disabled:opacity-40 ${active
+                                ? "border-b-[1.5px] border-[var(--ink-primary)] text-[var(--ink-primary)]"
+                                : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                                 }`}
                             >
                               {preset.label}
@@ -826,7 +887,7 @@ export function TailorFitPanel({
                         })}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-3">
                       <input
                         type="range"
                         aria-label="Bottom leg width scale"
@@ -840,9 +901,9 @@ export function TailorFitPanel({
                             bottomWidthScale: Number(e.target.value),
                           })
                         }
-                        className="h-1 flex-1 cursor-pointer appearance-none bg-[#E2E0DA] accent-[#0E0E0E] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-[var(--border-hairline)] accent-[var(--ink-primary)] disabled:cursor-not-allowed disabled:opacity-40"
                       />
-                      <span className="w-10 text-right text-[11px] font-medium text-[#0E0E0E] tabular-nums">
+                      <span className="w-10 text-right text-[11px] font-semibold text-[var(--ink-primary)] tabular-nums">
                         {fit.bottomWidthScale.toFixed(2)}×
                       </span>
                     </div>
@@ -852,15 +913,15 @@ export function TailorFitPanel({
 
               {/* Engine Mode Switch */}
               {hasMultiPiece && onChangeRenderMode && (
-                <div className="border-t border-[#E2E0DA] pt-3">
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-[10px] font-medium tracking-[0.12em] text-[#6C6A64] uppercase">
-                      Engine Mode
+                <div className="border-t border-[var(--border-hairline)] pt-3.5">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase">
+                      Render Chain
                     </span>
-                    <span className="text-[10px] text-[#4A4945]">
+                    <span className="text-[10px] text-[var(--ink-muted)]">
                       {renderMode === "two-pass"
                         ? hasLayeredOuterwear
-                          ? "Bottoms + unified layered jacket/shirt"
+                          ? "Bottoms + layered jacket/shirt"
                           : "Full-length trousers + tuck order"
                         : "Single pass (fast composite)"}
                     </span>
@@ -868,7 +929,7 @@ export function TailorFitPanel({
                   <div
                     role="group"
                     aria-label="Try-On engine mode"
-                    className="grid grid-cols-2 border border-[#E2E0DA] bg-[#F9F8F6] p-0.5"
+                    className="grid grid-cols-2 rounded-[10px] bg-[var(--bg-well)] p-1"
                   >
                     {(
                       [
@@ -888,9 +949,9 @@ export function TailorFitPanel({
                           type="button"
                           disabled={disabled}
                           onClick={() => onChangeRenderMode(option.id)}
-                          className={`h-7 text-[11px] font-medium transition-colors disabled:opacity-40 ${active
-                            ? "bg-[#0E0E0E] text-white"
-                            : "text-[#4A4945] hover:text-[#0E0E0E]"
+                          className={`h-7 rounded-[8px] text-[11px] font-medium transition-colors duration-150 disabled:opacity-40 ${active
+                            ? "bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                            : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
                             }`}
                         >
                           {option.label}

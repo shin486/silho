@@ -2,12 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ArrowRight,
   Camera,
-  CameraOff,
   Loader2,
   RefreshCw,
-  RotateCcw,
-  Sparkles,
   Timer,
   UserRound,
 } from "lucide-react";
@@ -390,37 +388,39 @@ export function CameraBooth({
   }
 
   return (
-    <section className="flex h-full flex-col bg-white">
+    <section className="flex h-full flex-col overflow-hidden rounded-[28px] border border-[var(--border-hairline)] bg-[var(--bg-surface)] transition-colors duration-150">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E2E0DA] px-5 py-3.5">
-        <div className="flex items-baseline gap-2.5">
-          <h1 className="text-[11px] font-semibold tracking-[0.14em] text-[#0E0E0E] uppercase">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-hairline)] px-6 py-4 sm:px-7">
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden="true"
+            className="h-1.5 w-1.5 rounded-full bg-[var(--ink-primary)]"
+          />
+          <h1 className="text-[11px] font-semibold tracking-[0.16em] text-[var(--ink-primary)] uppercase">
             Camera Booth
           </h1>
-          <span className="text-[11px] text-[#6C6A64] tabular-nums">
-            3:4 · 768×1024
+          <span className="text-[10px] font-medium tracking-[0.14em] text-[var(--ink-muted)] uppercase tabular-nums">
+            / 3:4 · 768×1024
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {status === "live" && (
             <>
               <button
                 type="button"
                 onClick={handleFlipCamera}
                 disabled={countdown !== null}
-                className="inline-flex h-7 items-center gap-1.5 border border-[#E2E0DA] bg-white px-2.5 text-[11px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E] disabled:opacity-40"
+                className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase transition-colors hover:text-[var(--ink-primary)] disabled:opacity-40"
               >
-                <RefreshCw className="h-3 w-3" />
-                <span>Flip Camera</span>
+                Flip
               </button>
               <button
                 type="button"
                 onClick={stopCamera}
-                className="inline-flex h-7 items-center gap-1.5 border border-[#0E0E0E] bg-[#0E0E0E] px-2.5 text-[11px] font-medium text-white transition-colors hover:bg-[#2B2B29]"
+                className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-primary)] uppercase transition-opacity hover:opacity-70"
               >
-                <CameraOff className="h-3 w-3" />
-                <span>Stop</span>
+                Stop
               </button>
             </>
           )}
@@ -430,25 +430,23 @@ export function CameraBooth({
               type="button"
               onClick={() => void startCamera(facingMode)}
               disabled={isBusyAction !== null}
-              className="inline-flex h-7 items-center gap-1.5 border border-[#E2E0DA] bg-white px-2.5 text-[11px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E] disabled:opacity-40"
+              className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase transition-colors hover:text-[var(--ink-primary)] disabled:opacity-40"
             >
-              <RotateCcw className="h-3 w-3" />
-              <span>Retake</span>
+              Retake
             </button>
           )}
         </div>
       </div>
 
       {/* 3:4 Viewfinder Stage */}
-      <div className="flex flex-1 items-center justify-center bg-[#F2F1ED] p-4 sm:p-6">
-        <div className="relative aspect-[3/4] w-full max-w-[440px] overflow-hidden border border-[#E2E0DA] bg-white">
+      <div className="flex flex-1 items-center justify-center bg-[var(--bg-well)] p-5 sm:p-7">
+        <div className="relative aspect-[3/4] w-full max-w-[420px] overflow-hidden rounded-[20px] border border-[var(--border-hairline)] bg-[var(--bg-surface)]">
           <video
             ref={videoRef}
             playsInline
             muted
-            className={`h-full w-full object-cover ${
-              facingMode === "user" ? "-scale-x-100" : ""
-            } ${status === "live" ? "block" : "hidden"}`}
+            className={`h-full w-full object-cover ${facingMode === "user" ? "-scale-x-100" : ""
+              } ${status === "live" ? "block" : "hidden"}`}
           />
 
           {status === "live" && <BoothGhostSilhouette />}
@@ -458,33 +456,32 @@ export function CameraBooth({
             <img
               src={capturedDataUrl}
               alt="Captured 3:4 full-body portrait"
-              className={`h-full w-full object-cover transition-opacity ${
-                isBusyAction ? "opacity-40 blur-[2px]" : "opacity-100"
-              }`}
+              className={`h-full w-full object-cover transition-opacity ${isBusyAction ? "opacity-30" : "opacity-100"
+                }`}
             />
           )}
 
           {status === "idle" && (
-            <div className="flex h-full w-full flex-col items-center justify-center bg-[#F9F8F6] px-8 text-center">
-              <div className="flex h-12 w-12 items-center justify-center border border-[#E2E0DA] bg-white text-[#0E0E0E]">
-                <Camera className="h-5 w-5" strokeWidth={1.3} />
+            <div className="flex h-full w-full flex-col items-center justify-center bg-[var(--bg-surface)] px-8 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--border-hairline)] bg-[var(--bg-well)] text-[var(--ink-primary)]">
+                <Camera className="h-5 w-5" strokeWidth={1.4} />
               </div>
-              <h2 className="mt-5 text-[16px] font-medium tracking-[-0.02em] text-[#0E0E0E]">
+              <h2 className="mt-5 text-[18px] font-bold tracking-[-0.025em] text-[var(--ink-primary)]">
                 Full-Body Camera Booth
               </h2>
-              <p className="mt-1.5 max-w-[30ch] text-[13px] leading-relaxed text-[#4A4945]">
+              <p className="mt-2 max-w-[30ch] text-[13px] leading-relaxed text-[var(--ink-muted)]">
                 Align with the 3:4 ghost guide using a 3s or 5s self-timer, then
                 drape your outfit in HD.
               </p>
               <button
                 type="button"
                 onClick={() => void startCamera(facingMode)}
-                className="mt-6 inline-flex h-10 items-center gap-2 bg-[#0E0E0E] px-5 text-[12px] font-medium text-white transition-colors hover:bg-[#2B2B29]"
+                className="mt-6 inline-flex h-11 items-center gap-2 rounded-[12px] bg-[var(--btn-primary-bg)] px-6 text-[11px] font-semibold tracking-[0.14em] text-[var(--btn-primary-fg)] uppercase transition-colors hover:bg-[var(--btn-primary-hover)]"
               >
-                <Camera className="h-3.5 w-3.5" />
                 <span>Start Camera</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </button>
-              <p className="mt-4 max-w-[30ch] text-[11px] leading-relaxed text-[#6C6A64]">
+              <p className="mt-4 max-w-[30ch] text-[11px] leading-relaxed text-[var(--ink-muted)]">
                 Stand facing forward in even indoor lighting for the cleanest
                 fit.
               </p>
@@ -492,26 +489,26 @@ export function CameraBooth({
           )}
 
           {status === "starting" && (
-            <div className="flex h-full w-full flex-col items-center justify-center bg-[#F9F8F6] px-8 text-center">
-              <Loader2 className="h-5 w-5 animate-spin text-[#0E0E0E]" />
-              <p className="mt-3 text-[13px] font-medium text-[#0E0E0E]">
+            <div className="flex h-full w-full flex-col items-center justify-center bg-[var(--bg-surface)] px-8 text-center">
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--ink-primary)]" />
+              <p className="mt-3 text-[13px] font-medium text-[var(--ink-primary)]">
                 Starting camera…
               </p>
             </div>
           )}
 
           {status === "error" && (
-            <div className="flex h-full w-full flex-col items-center justify-center bg-[#F9F8F6] px-8 text-center">
-              <p className="text-[14px] font-medium text-[#0E0E0E]">
+            <div className="flex h-full w-full flex-col items-center justify-center bg-[var(--bg-surface)] px-8 text-center">
+              <p className="text-[15px] font-semibold text-[var(--ink-primary)]">
                 Camera unavailable
               </p>
-              <p className="mt-1.5 max-w-[30ch] text-[12px] leading-relaxed text-[#4A4945]">
+              <p className="mt-1.5 max-w-[30ch] text-[12px] leading-relaxed text-[var(--ink-muted)]">
                 {error || "Allow camera permission and retry."}
               </p>
               <button
                 type="button"
                 onClick={() => void startCamera(facingMode)}
-                className="mt-5 inline-flex h-9 items-center gap-1.5 bg-[#0E0E0E] px-4 text-[12px] font-medium text-white transition-colors hover:bg-[#2B2B29]"
+                className="mt-5 inline-flex h-10 items-center gap-2 rounded-[12px] bg-[var(--btn-primary-bg)] px-5 text-[11px] font-semibold tracking-[0.14em] text-[var(--btn-primary-fg)] uppercase transition-colors hover:bg-[var(--btn-primary-hover)]"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 <span>Retry Camera</span>
@@ -520,23 +517,23 @@ export function CameraBooth({
           )}
 
           {status === "live" && countdown !== null && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#0E0E0E]/35 backdrop-blur-[1px]">
-              <span className="text-[76px] font-medium tracking-[-0.04em] text-white tabular-nums">
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#141415]/60">
+              <span className="text-[76px] font-bold tracking-[-0.04em] text-white tabular-nums">
                 {countdown}
               </span>
-              <span className="mt-1 border border-white/30 bg-[#0E0E0E]/80 px-3 py-1 text-[11px] font-medium text-white">
+              <span className="mt-1 rounded-[8px] bg-[#141415] px-3 py-1 text-[10px] font-semibold tracking-[0.14em] text-white uppercase">
                 Step back &amp; hold pose
               </span>
             </div>
           )}
 
           {status === "captured" && isBusyAction && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[#F9F8F6]/85 px-6 text-center backdrop-blur-[2px]">
-              <Loader2 className="h-5 w-5 animate-spin text-[#0E0E0E]" />
-              <p className="mt-3 text-[13px] font-medium text-[#0E0E0E]">
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[var(--bg-surface)]/92 px-6 text-center">
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--ink-primary)]" />
+              <p className="mt-3 text-[13px] font-semibold text-[var(--ink-primary)]">
                 {isBusyAction === "avatar"
                   ? avatarProgress || "Creating Studio Avatar…"
-                  : "Sending frame to AI Try-On…"}
+                  : "Sending frame to Try-On…"}
               </p>
             </div>
           )}
@@ -547,63 +544,63 @@ export function CameraBooth({
       {error && status !== "error" && (
         <div
           role="alert"
-          className="border-t border-[#D9B4B2] bg-[#FAF2F2] px-5 py-2.5 text-[12px] text-[#8C1D18]"
+          className="border-t border-[var(--status-danger-border)] bg-[var(--status-danger-bg)] px-6 py-2.5 text-[12px] text-[var(--status-danger-ink)]"
         >
           {error}
         </div>
       )}
 
       {/* Pinned Action Bar */}
-      <div className="border-t border-[#E2E0DA] bg-white px-5 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      <div className="border-t border-[var(--border-hairline)] bg-[var(--bg-surface)] px-6 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-7">
         {status === "captured" ? (
           <div className="flex flex-col gap-3">
             {selectedSummary && (
-              <div className="truncate text-[11px] text-[#4A4945]">
+              <div className="truncate text-[11px] text-[var(--ink-muted)]">
                 Selected outfit:{" "}
-                <span className="font-medium text-[#0E0E0E]">
+                <span className="font-semibold text-[var(--ink-primary)]">
                   {selectedSummary}
                 </span>
               </div>
             )}
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => void handleTryOnSnapped()}
                 disabled={!hasTryOnSelection || isBusyAction !== null}
-                className="inline-flex h-10 items-center justify-center gap-2 bg-[#0E0E0E] px-4 text-[12px] font-medium text-white transition-colors hover:bg-[#2B2B29] disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] bg-[var(--btn-primary-bg)] px-4 text-[11px] font-semibold tracking-[0.14em] text-[var(--btn-primary-fg)] uppercase transition-colors hover:bg-[var(--btn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-35"
               >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>Try On Selected Outfit</span>
+                <span>Try On Outfit</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </button>
 
               <button
                 type="button"
                 onClick={() => void handleSetAsStudioAvatar()}
                 disabled={isBusyAction !== null}
-                className="inline-flex h-10 items-center justify-center gap-2 border border-[#E2E0DA] bg-white px-4 text-[12px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E] disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border border-[var(--border-hairline)] bg-[var(--bg-well)] px-4 text-[11px] font-semibold tracking-[0.12em] text-[var(--ink-primary)] uppercase transition-colors hover:border-[var(--ink-primary)] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <UserRound className="h-3.5 w-3.5" />
-                <span>Set as Studio Avatar</span>
+                <span>Set Studio Avatar</span>
               </button>
             </div>
             {!hasTryOnSelection && (
-              <p className="text-[11px] text-[#6C6A64]">
+              <p className="text-[11px] text-[var(--ink-muted)]">
                 Select a Top, Outerwear, or Bottom from your closet to enable
-                Try On Selected Outfit.
+                Try On Outfit.
               </p>
             )}
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4A4945]">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase">
                 <Timer className="h-3.5 w-3.5" />
-                <span>Self-Timer</span>
+                <span>Timer</span>
               </span>
               <div
                 role="group"
                 aria-label="Self-timer duration"
-                className="inline-flex border border-[#E2E0DA] bg-[#F9F8F6] p-0.5"
+                className="inline-flex items-center gap-3"
               >
                 {([3, 5] as const).map((sec) => (
                   <button
@@ -611,11 +608,10 @@ export function CameraBooth({
                     type="button"
                     onClick={() => setTimerSeconds(sec)}
                     disabled={countdown !== null}
-                    className={`h-7 px-2.5 text-[11px] font-medium tabular-nums transition-colors disabled:opacity-40 ${
-                      timerSeconds === sec
-                        ? "bg-[#0E0E0E] text-white"
-                        : "text-[#4A4945] hover:text-[#0E0E0E]"
-                    }`}
+                    className={`pb-0.5 text-[11px] font-semibold tabular-nums transition-colors disabled:opacity-40 ${timerSeconds === sec
+                      ? "border-b-[1.5px] border-[var(--ink-primary)] text-[var(--ink-primary)]"
+                      : "text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
+                      }`}
                   >
                     {sec}s
                   </button>
@@ -628,7 +624,7 @@ export function CameraBooth({
                 <button
                   type="button"
                   onClick={clearTimer}
-                  className="inline-flex h-9 items-center gap-1.5 border border-[#0E0E0E] bg-white px-4 text-[12px] font-medium text-[#0E0E0E] transition-colors hover:bg-[#F9F8F6]"
+                  className="inline-flex h-10 items-center gap-1.5 rounded-[12px] border border-[var(--ink-primary)] bg-[var(--bg-surface)] px-4 text-[11px] font-semibold tracking-[0.12em] text-[var(--ink-primary)] uppercase transition-colors hover:bg-[var(--bg-well)]"
                 >
                   <span>Cancel ({countdown}s)</span>
                 </button>
@@ -636,14 +632,14 @@ export function CameraBooth({
                 <button
                   type="button"
                   onClick={handleStartSelfTimer}
-                  className="inline-flex h-9 items-center gap-2 bg-[#0E0E0E] px-4 text-[12px] font-medium text-white transition-colors hover:bg-[#2B2B29]"
+                  className="inline-flex h-10 items-center gap-2 rounded-[12px] bg-[var(--btn-primary-bg)] px-5 text-[11px] font-semibold tracking-[0.14em] text-[var(--btn-primary-fg)] uppercase transition-colors hover:bg-[var(--btn-primary-hover)]"
                 >
                   <Camera className="h-3.5 w-3.5" />
-                  <span>Snap Portrait ({timerSeconds}s)</span>
+                  <span>Snap ({timerSeconds}s)</span>
                 </button>
               )
             ) : (
-              <span className="text-[11px] font-medium tracking-[0.08em] text-[#6C6A64] uppercase">
+              <span className="text-[10px] font-medium tracking-[0.14em] text-[var(--ink-muted)] uppercase">
                 {status === "starting"
                   ? "Initializing camera…"
                   : "Ready for capture"}

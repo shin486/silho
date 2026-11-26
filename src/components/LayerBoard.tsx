@@ -7,17 +7,15 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
-  Bookmark,
   Check,
-  LayoutGrid,
   Loader2,
   Minus,
   Plus,
-  RotateCcw,
-  Shuffle,
   X,
 } from "lucide-react";
+import { RollingNumber } from "@/components/RollingNumber";
 import { TailorFitPanel } from "@/components/TailorFitPanel";
 import {
   CATEGORY_LABELS,
@@ -30,10 +28,14 @@ import {
   type TailorFitConfig,
 } from "@/lib/types/tailorFit";
 import { calculateCostPerWear, formatPeso } from "@/lib/utils/costPerWear";
+import { cleanGarmentName } from "@/lib/utils/garmentName";
 import {
   trimGarmentImage,
   useTrimmedGarment,
 } from "@/lib/utils/trimGarmentClient";
+
+const RACK_EASE = [0.22, 1, 0.36, 1] as const;
+const RACK_FAST = { duration: 0.22, ease: RACK_EASE };
 
 export type BoardSelection = Partial<Record<WardrobeCategory, string>>;
 
@@ -179,6 +181,7 @@ export function LayerBoard({
   const [isSavingLook, setIsSavingLook] = useState(false);
   const [justSavedLook, setJustSavedLook] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [spotlightId, setSpotlightId] = useState<string | null>(null);
 
   const topItem = selectedBySlot.top
     ? itemsById.get(selectedBySlot.top) ?? null
@@ -599,36 +602,38 @@ export function LayerBoard({
   const slotItems = itemsByCategory[activePickerSlot];
 
   return (
-    <div className="grid grid-cols-1 border border-[#E2E0DA] bg-white lg:grid-cols-12">
-      {/* Editorial Studio Flat-Lay Canvas */}
-      <section className="flex flex-col border-b border-[#E2E0DA] bg-white lg:col-span-7 lg:border-r lg:border-b-0">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E2E0DA] px-5 py-3.5">
-          <div className="flex items-baseline gap-3">
-            <h1 className="text-[11px] font-semibold tracking-[0.14em] text-[#0E0E0E] uppercase">
+    <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
+      {/* Editorial Studio Flat-Lay Canvas (28px Card) */}
+      <section className="flex flex-col overflow-hidden rounded-[28px] border border-[var(--border-hairline)] bg-[var(--bg-surface)] transition-colors duration-150 lg:col-span-7">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-hairline)] px-6 py-4 sm:px-7">
+          <div className="flex items-center gap-2.5">
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full bg-[var(--ink-primary)]"
+            />
+            <h1 className="text-[11px] font-semibold tracking-[0.16em] text-[var(--ink-primary)] uppercase">
               Layer Board
             </h1>
-            <span className="text-[11px] text-[#6C6A64] tabular-nums">
-              {placedPieces.length} / {SLOT_ORDER.length} slots
+            <span className="text-[10px] font-medium tracking-[0.14em] text-[var(--ink-muted)] uppercase tabular-nums">
+              / {placedPieces.length} of {SLOT_ORDER.length}
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-4">
             <button
               type="button"
               onClick={onShuffle}
-              className="inline-flex h-8 items-center gap-1.5 border border-[#E2E0DA] bg-white px-2.5 text-[11px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E]"
+              className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase transition-colors duration-150 hover:text-[var(--ink-primary)]"
             >
-              <Shuffle className="h-3 w-3" />
-              <span>Shuffle</span>
+              Shuffle
             </button>
             <button
               type="button"
               onClick={handleResetLayout}
               disabled={placedPieces.length === 0}
-              className="inline-flex h-8 items-center gap-1.5 border border-[#E2E0DA] bg-white px-2.5 text-[11px] font-medium text-[#0E0E0E] transition-colors hover:border-[#0E0E0E] disabled:opacity-40"
+              className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase transition-colors duration-150 hover:text-[var(--ink-primary)] disabled:opacity-35"
             >
-              <LayoutGrid className="h-3 w-3" />
-              <span>Reset</span>
+              Reset
             </button>
             <button
               type="button"
@@ -637,42 +642,40 @@ export function LayerBoard({
                 setSelectedCanvasSlot(null);
               }}
               disabled={placedPieces.length === 0}
-              className="inline-flex h-8 items-center gap-1.5 border border-[#E2E0DA] bg-white px-2.5 text-[11px] text-[#4A4945] transition-colors hover:border-[#0E0E0E] hover:text-[#0E0E0E] disabled:opacity-40"
+              className="text-[10px] font-semibold tracking-[0.14em] text-[var(--ink-muted)] uppercase transition-colors duration-150 hover:text-[var(--ink-primary)] disabled:opacity-35"
             >
-              <RotateCcw className="h-3 w-3" />
-              <span>Clear</span>
+              Clear
             </button>
             <button
               type="button"
               onClick={() => void handleSaveLook()}
               disabled={placedPieces.length === 0 || isSavingLook}
-              className="inline-flex h-8 items-center gap-1.5 border border-[#0E0E0E] bg-[#0E0E0E] px-3 text-[11px] font-medium text-white transition-colors hover:bg-[#2B2B29] disabled:opacity-40"
+              className="group inline-flex h-9 items-center text-[10px] font-semibold tracking-[0.16em] text-[var(--ink-primary)] uppercase transition-opacity duration-150 hover:opacity-75 disabled:opacity-35"
             >
-              {isSavingLook ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : justSavedLook ? (
-                <Check className="h-3 w-3" />
-              ) : (
-                <Bookmark className="h-3 w-3" />
-              )}
-              <span>{justSavedLook ? "Saved" : "Save Look"}</span>
+              <span
+                aria-hidden="true"
+                className="-mr-3.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--ink-primary)]/45 transition-colors group-hover:border-[var(--ink-primary)]"
+              />
+              <span className="relative z-[1]">
+                {isSavingLook ? "Saving…" : justSavedLook ? "Saved" : "Save Look"}
+              </span>
             </button>
           </div>
         </div>
 
-        {/* Fixed-Proportion Editorial Paper Surface */}
-        <div className="flex flex-1 flex-col items-center justify-center bg-[#EAE8E3] p-4 sm:p-6">
+        {/* Editorial Flat-Lay Paper Well */}
+        <div className="flex flex-1 flex-col items-center justify-center bg-[var(--bg-well-deep)] p-5 sm:p-7">
           <div
             ref={boardRef}
             onPointerDown={() => setSelectedCanvasSlot(null)}
-            className="relative aspect-[4/5] w-full max-w-[540px] select-none overflow-hidden border border-[#E2E0DA] bg-[#F7F7F5] sm:min-h-[520px]"
+            className="relative aspect-[4/5] w-full max-w-[540px] select-none overflow-hidden rounded-[20px] border border-[var(--border-hairline)] bg-[var(--bg-tile)] sm:min-h-[520px]"
           >
             {placedPieces.length === 0 ? (
               <div className="flex h-full w-full flex-col items-center justify-center px-6 text-center">
-                <p className="text-[15px] font-medium tracking-[-0.015em] text-[#0E0E0E]">
+                <p className="text-[16px] font-semibold tracking-[-0.02em] text-[var(--ink-primary)]">
                   Compose an editorial flat-lay
                 </p>
-                <p className="mt-1.5 max-w-[30ch] text-[12px] leading-relaxed text-[#4A4945]">
+                <p className="mt-1.5 max-w-[30ch] text-[12px] leading-relaxed text-[var(--ink-muted)]">
                   Pick pieces from your wardrobe on the right, or press Shuffle.
                   Drag any garment to fine-tune overlap and scale.
                 </p>
@@ -718,11 +721,10 @@ export function LayerBoard({
                           height: `${boxH}%`,
                           zIndex: isSelected ? 40 : effectiveZIndex,
                         }}
-                        className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none active:cursor-grabbing ${
-                          isSelected
-                            ? "outline outline-1 outline-dashed outline-[#0E0E0E]/45 outline-offset-4"
-                            : "hover:outline hover:outline-1 hover:outline-dashed hover:outline-[#0E0E0E]/25 hover:outline-offset-4"
-                        }`}
+                        className={`group absolute -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none active:cursor-grabbing ${isSelected
+                          ? "outline outline-1 outline-dashed outline-[var(--ink-primary)]/45 outline-offset-4"
+                          : "hover:outline hover:outline-1 hover:outline-dashed hover:outline-[var(--ink-primary)]/25 hover:outline-offset-4"
+                          }`}
                       >
                         <div className="pointer-events-none h-full w-full overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -738,27 +740,26 @@ export function LayerBoard({
                               width: "100%",
                               height: `${uncroppedHeightRatioPct}%`,
                             }}
-                            className="block object-fill object-top mix-blend-multiply"
+                            className="block object-fill object-top mix-blend-multiply dark:mix-blend-normal"
                           />
                         </div>
 
                         <div
-                          className={`absolute -top-9 left-1/2 flex -translate-x-1/2 items-center border border-[#E2E0DA] bg-white/95 backdrop-blur-[2px] transition-opacity ${
-                            isSelected
-                              ? "opacity-100"
-                              : "pointer-events-none opacity-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
-                          }`}
+                          className={`absolute -top-9 left-1/2 flex -translate-x-1/2 items-center rounded-[10px] border border-[var(--border-hairline)] bg-[var(--bg-surface)] transition-opacity ${isSelected
+                            ? "opacity-100"
+                            : "pointer-events-none opacity-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+                            }`}
                         >
                           <button
                             type="button"
                             onClick={() => adjustScale(slot, -0.1)}
                             aria-label={`Shrink ${item.name}`}
                             title="Decrease scale"
-                            className="flex h-6 w-6 items-center justify-center text-[#4A4945] transition-colors hover:bg-[#F9F8F6] hover:text-[#0E0E0E]"
+                            className="flex h-7 w-7 items-center justify-center text-[var(--ink-muted)] transition-colors hover:text-[var(--ink-primary)]"
                           >
                             <Minus className="h-3 w-3" />
                           </button>
-                          <span className="border-x border-[#E2E0DA] px-1.5 text-[10px] font-medium text-[#4A4945] tabular-nums">
+                          <span className="border-x border-[var(--border-hairline)] px-2 text-[10px] font-medium text-[var(--ink-primary)] tabular-nums">
                             {Math.round(transform.scale * 100)}%
                           </span>
                           <button
@@ -766,7 +767,7 @@ export function LayerBoard({
                             onClick={() => adjustScale(slot, 0.1)}
                             aria-label={`Enlarge ${item.name}`}
                             title="Increase scale"
-                            className="flex h-6 w-6 items-center justify-center text-[#4A4945] transition-colors hover:bg-[#F9F8F6] hover:text-[#0E0E0E]"
+                            className="flex h-7 w-7 items-center justify-center text-[var(--ink-muted)] transition-colors hover:text-[var(--ink-primary)]"
                           >
                             <Plus className="h-3 w-3" />
                           </button>
@@ -780,7 +781,7 @@ export function LayerBoard({
                             }}
                             aria-label={`Remove ${item.name} from board`}
                             title="Remove"
-                            className="flex h-6 w-6 items-center justify-center border-l border-[#E2E0DA] text-[#4A4945] transition-colors hover:bg-[#0E0E0E] hover:text-white"
+                            className="flex h-7 w-7 items-center justify-center border-l border-[var(--border-hairline)] text-[var(--ink-muted)] transition-colors hover:text-[var(--ink-primary)]"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -804,11 +805,10 @@ export function LayerBoard({
                         height: `${heightPct}%`,
                         zIndex: isSelected ? 40 : effectiveZIndex,
                       }}
-                      className={`group absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none items-center justify-center active:cursor-grabbing ${
-                        isSelected
-                          ? "outline outline-1 outline-dashed outline-[#0E0E0E]/45 outline-offset-4"
-                          : "hover:outline hover:outline-1 hover:outline-dashed hover:outline-[#0E0E0E]/25 hover:outline-offset-4"
-                      }`}
+                      className={`group absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none items-center justify-center active:cursor-grabbing ${isSelected
+                        ? "outline outline-1 outline-dashed outline-[var(--ink-primary)]/45 outline-offset-4"
+                        : "hover:outline hover:outline-1 hover:outline-dashed hover:outline-[var(--ink-primary)]/25 hover:outline-offset-4"
+                        }`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -826,26 +826,25 @@ export function LayerBoard({
                               : undefined,
                           transformOrigin: "center center",
                         }}
-                        className="pointer-events-none h-full w-auto max-w-none object-contain mix-blend-multiply"
+                        className="pointer-events-none h-full w-auto max-w-none object-contain mix-blend-multiply dark:mix-blend-normal"
                       />
 
                       <div
-                        className={`absolute -top-9 left-1/2 flex -translate-x-1/2 items-center border border-[#E2E0DA] bg-white/95 backdrop-blur-[2px] transition-opacity ${
-                          isSelected
-                            ? "opacity-100"
-                            : "pointer-events-none opacity-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
-                        }`}
+                        className={`absolute -top-9 left-1/2 flex -translate-x-1/2 items-center rounded-[10px] border border-[var(--border-hairline)] bg-[var(--bg-surface)] transition-opacity ${isSelected
+                          ? "opacity-100"
+                          : "pointer-events-none opacity-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+                          }`}
                       >
                         <button
                           type="button"
                           onClick={() => adjustScale(slot, -0.1)}
                           aria-label={`Shrink ${item.name}`}
                           title="Decrease scale"
-                          className="flex h-6 w-6 items-center justify-center text-[#4A4945] transition-colors hover:bg-[#F9F8F6] hover:text-[#0E0E0E]"
+                          className="flex h-7 w-7 items-center justify-center text-[var(--ink-muted)] transition-colors hover:text-[var(--ink-primary)]"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
-                        <span className="border-x border-[#E2E0DA] px-1.5 text-[10px] font-medium text-[#4A4945] tabular-nums">
+                        <span className="border-x border-[var(--border-hairline)] px-2 text-[10px] font-medium text-[var(--ink-primary)] tabular-nums">
                           {Math.round(transform.scale * 100)}%
                         </span>
                         <button
@@ -853,7 +852,7 @@ export function LayerBoard({
                           onClick={() => adjustScale(slot, 0.1)}
                           aria-label={`Enlarge ${item.name}`}
                           title="Increase scale"
-                          className="flex h-6 w-6 items-center justify-center text-[#4A4945] transition-colors hover:bg-[#F9F8F6] hover:text-[#0E0E0E]"
+                          className="flex h-7 w-7 items-center justify-center text-[var(--ink-muted)] transition-colors hover:text-[var(--ink-primary)]"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
@@ -867,7 +866,7 @@ export function LayerBoard({
                           }}
                           aria-label={`Remove ${item.name} from board`}
                           title="Remove"
-                          className="flex h-6 w-6 items-center justify-center border-l border-[#E2E0DA] text-[#4A4945] transition-colors hover:bg-[#0E0E0E] hover:text-white"
+                          className="flex h-7 w-7 items-center justify-center border-l border-[var(--border-hairline)] text-[var(--ink-muted)] transition-colors hover:text-[var(--ink-primary)]"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -878,7 +877,7 @@ export function LayerBoard({
               )
             )}
 
-            {/* Subtle Untucked Cast Hem Shadow across trousers on live Layer Board */}
+            {/* Subtle Untucked Cast Hem Shadow */}
             {tailorFit.tuckMode === "untucked" &&
               boardGeometry.upper &&
               boardGeometry.lower && (() => {
@@ -936,46 +935,46 @@ export function LayerBoard({
           {(boardFeedback || boardError || exportError) && (
             <div
               role={boardError || exportError ? "alert" : "status"}
-              className={`mt-4 w-full max-w-[540px] border px-3.5 py-2.5 text-[12px] ${
-                boardError || exportError
-                  ? "border-[#D9B4B2] bg-[#FAF2F2] text-[#8C1D18]"
-                  : "border-[#E2E0DA] bg-white text-[#0E0E0E]"
-              }`}
+              className={`mt-4 w-full max-w-[540px] rounded-[12px] border px-4 py-2.5 text-[12px] ${boardError || exportError
+                ? "border-[var(--status-danger-border)] bg-[var(--status-danger-bg)] text-[var(--status-danger-ink)]"
+                : "border-[var(--border-hairline)] bg-[var(--bg-surface)] text-[var(--ink-primary)]"
+                }`}
             >
               {exportError || boardError || boardFeedback}
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-2 divide-x divide-[#E2E0DA] border-t border-[#E2E0DA] bg-white">
-          <div className="px-5 py-4">
-            <div className="text-[10px] font-medium tracking-[0.14em] text-[#6C6A64] uppercase">
-              Combined Value
-            </div>
-            <div className="mt-1 text-[18px] leading-none font-semibold tracking-[-0.025em] text-[#0E0E0E] tabular-nums sm:text-[20px]">
+        {/* Bottom Horizontal Spec Grid */}
+        <div className="grid grid-cols-2 divide-x divide-[var(--border-hairline)] border-t border-[var(--border-hairline)] bg-[var(--bg-surface)]">
+          <div className="px-6 py-4 sm:px-7">
+            <div className="text-[20px] leading-none font-semibold tracking-[-0.03em] text-[var(--ink-primary)] tabular-nums sm:text-[22px]">
               {formatPeso(fitValue)}
             </div>
-          </div>
-          <div className="px-5 py-4">
-            <div className="text-[10px] font-medium tracking-[0.14em] text-[#6C6A64] uppercase">
-              Combined Cost / Wear
+            <div className="mt-1.5 text-[10px] font-medium tracking-[0.16em] text-[var(--ink-muted)] uppercase">
+              Combined Value
             </div>
-            <div className="mt-1 text-[18px] leading-none font-semibold tracking-[-0.025em] text-[#0E0E0E] tabular-nums sm:text-[20px]">
+          </div>
+          <div className="px-6 py-4 sm:px-7">
+            <div className="text-[20px] leading-none font-semibold tracking-[-0.03em] text-[var(--ink-primary)] tabular-nums sm:text-[22px]">
               {formatPeso(fitCostPerWear)}
+            </div>
+            <div className="mt-1.5 text-[10px] font-medium tracking-[0.16em] text-[var(--ink-muted)] uppercase">
+              Combined ₱ / Wear
             </div>
           </div>
         </div>
       </section>
 
-      {/* Right Wardrobe Selector */}
-      <section className="flex flex-col bg-white lg:col-span-5">
-        <div className="border-b border-[#E2E0DA] px-5 pt-4">
+      {/* Right Wardrobe Selector (28px Card) */}
+      <section className="flex flex-col overflow-hidden rounded-[28px] border border-[var(--border-hairline)] bg-[var(--bg-surface)] transition-colors duration-150 lg:col-span-5">
+        <div className="border-b border-[var(--border-hairline)] px-6 pt-5 sm:px-7">
           <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-[11px] font-semibold tracking-[0.14em] text-[#0E0E0E] uppercase">
+            <h2 className="text-[11px] font-semibold tracking-[0.16em] text-[var(--ink-primary)] uppercase">
               Wardrobe Pieces
             </h2>
-            <span className="text-[11px] text-[#6C6A64]">
-              Drag pieces on canvas
+            <span className="text-[10px] tracking-[0.12em] text-[var(--ink-muted)] uppercase">
+              Drag on canvas
             </span>
           </div>
 
@@ -992,7 +991,7 @@ export function LayerBoard({
           <div
             role="tablist"
             aria-label="Filter layer board slots"
-            className="no-scrollbar mt-3 flex items-stretch gap-5 overflow-x-auto border-t border-[#E2E0DA]"
+            className="no-scrollbar mt-4 flex items-stretch gap-5 overflow-x-auto border-t border-[var(--border-hairline)] sm:gap-6"
           >
             {SLOT_ORDER.map((category) => {
               const isActive = activePickerSlot === category;
@@ -1004,28 +1003,24 @@ export function LayerBoard({
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setActivePickerSlot(category)}
-                  className={`relative inline-flex h-10 shrink-0 items-center gap-1.5 text-[12px] tracking-[0.02em] transition-colors ${
-                    isActive
-                      ? "font-medium text-[#0E0E0E]"
-                      : "text-[#6C6A64] hover:text-[#0E0E0E]"
-                  }`}
+                  className={`relative inline-flex h-11 shrink-0 items-center gap-1.5 text-[13px] transition-colors duration-150 focus-visible:outline-offset-[-2px] ${isActive
+                    ? "font-semibold text-[var(--ink-primary)]"
+                    : "font-medium text-[var(--ink-muted)] hover:text-[var(--ink-primary)]"
+                    }`}
                 >
                   <span>{CATEGORY_LABELS[category]}</span>
-                  <span
-                    className={`text-[11px] tabular-nums ${
-                      isActive ? "text-[#0E0E0E]" : "text-[#6C6A64]"
-                    }`}
-                  >
-                    {itemsByCategory[category].length}
-                  </span>
                   {hasSelected && (
                     <span
                       aria-hidden="true"
-                      className="h-1.5 w-1.5 bg-[#0E0E0E]"
+                      className="h-1.5 w-1.5 rounded-full bg-[var(--ink-primary)]"
                     />
                   )}
                   {isActive && (
-                    <span className="absolute inset-x-0 bottom-0 h-[2px] bg-[#0E0E0E]" />
+                    <motion.span
+                      layoutId="board-tab-underline"
+                      transition={{ duration: 0.26, ease: RACK_EASE }}
+                      className="absolute inset-x-0 -bottom-px h-[1.5px] bg-[var(--ink-primary)]"
+                    />
                   )}
                 </button>
               );
@@ -1033,58 +1028,137 @@ export function LayerBoard({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+        <div className="flex-1 overflow-y-auto p-5 pb-28 sm:p-6 sm:pb-28">
           {slotItems.length === 0 ? (
-            <p className="py-12 text-center text-[13px] text-[#6C6A64]">
+            <p className="py-12 text-center text-[13px] text-[var(--ink-muted)]">
               No {CATEGORY_LABELS[activePickerSlot].toLowerCase()} pieces in
               your closet yet.
             </p>
           ) : (
-            <div className="grid grid-cols-2 border-t border-l border-[#E2E0DA]">
-              {slotItems.map((item) => {
-                const isSelected = selectedBySlot[item.category] === item.id;
-                const cpw = calculateCostPerWear(item.price, item.wearCount);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => onTogglePiece(item)}
-                    className="group relative flex flex-col border-r border-b border-[#E2E0DA] bg-white text-left transition-colors hover:bg-[#F9F8F6]"
-                  >
-                    {isSelected && (
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 z-10 border-[1.5px] border-[#0E0E0E]"
-                      />
-                    )}
-                    <div className="relative flex aspect-square w-full items-center justify-center overflow-hidden bg-[#F2F1ED] p-3.5">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="max-h-full max-w-full object-contain mix-blend-multiply transition-transform duration-300 ease-out group-hover:scale-[1.04]"
-                      />
-                      {isSelected && (
-                        <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center bg-[#0E0E0E] text-white">
-                          <Check className="h-3 w-3" />
-                        </span>
-                      )}
-                    </div>
-                    <div className="border-t border-[#E2E0DA] p-2.5 sm:p-3">
-                      <div className="truncate text-[12px] font-medium text-[#0E0E0E]">
-                        {item.name}
+            <div className="grid grid-cols-2 gap-x-3.5 gap-y-7">
+              <AnimatePresence initial={false} mode="popLayout">
+                {slotItems.map((item) => {
+                  const displayName = cleanGarmentName(item.name, item.category);
+                  const isSelected = selectedBySlot[item.category] === item.id;
+                  const isSpotlit = spotlightId === item.id;
+                  const isDimmed = spotlightId !== null && !isSpotlit;
+                  return (
+                    <motion.div
+                      key={item.id}
+                      layout="position"
+                      initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                      animate={{
+                        opacity: isDimmed ? 0.65 : 1,
+                        y: 0,
+                        scale: 1,
+                      }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{
+                        ...RACK_FAST,
+                        layout: { duration: 0.26, ease: RACK_EASE },
+                      }}
+                      onPointerEnter={(event) => {
+                        if (event.pointerType === "mouse") {
+                          setSpotlightId(item.id);
+                        }
+                      }}
+                      onPointerLeave={() =>
+                        setSpotlightId((prev) =>
+                          prev === item.id ? null : prev
+                        )
+                      }
+                      onPointerDown={() => setSpotlightId(item.id)}
+                      onPointerUp={(event) => {
+                        if (event.pointerType !== "mouse") {
+                          setSpotlightId(null);
+                        }
+                      }}
+                      onPointerCancel={() => setSpotlightId(null)}
+                      onFocus={(event) => {
+                        if (event.target.matches(":focus-visible")) {
+                          setSpotlightId(item.id);
+                        }
+                      }}
+                      onBlur={() =>
+                        setSpotlightId((prev) =>
+                          prev === item.id ? null : prev
+                        )
+                      }
+                    >
+                      <button
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => onTogglePiece(item)}
+                        className="relative block w-full overflow-hidden rounded-[20px] bg-[var(--bg-tile)] text-left"
+                      >
+                        <div className="flex aspect-square items-center justify-center p-5">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <motion.img
+                            src={item.imageUrl}
+                            alt={displayName}
+                            draggable={false}
+                            animate={{
+                              scale: isSpotlit ? 1.04 : 1,
+                              y: isSpotlit ? -4 : 0,
+                              filter: isSpotlit
+                                ? "drop-shadow(0 10px 14px rgba(20, 20, 21, 0.12))"
+                                : "drop-shadow(0 0px 0px rgba(20, 20, 21, 0))",
+                            }}
+                            transition={RACK_FAST}
+                            className="max-h-full max-w-full object-contain mix-blend-multiply dark:mix-blend-normal"
+                          />
+                        </div>
+
+                        <AnimatePresence initial={false}>
+                          {isSelected && (
+                            <>
+                              <motion.span
+                                key="board-ring"
+                                aria-hidden="true"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2, ease: RACK_EASE }}
+                                className="pointer-events-none absolute inset-0 rounded-[20px] border-[1.5px] border-[var(--ink-primary)]"
+                              />
+                              <motion.span
+                                key="board-check"
+                                aria-hidden="true"
+                                initial={{ scale: 0.75, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.75, opacity: 0 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 460,
+                                  damping: 30,
+                                }}
+                                className="absolute top-2.5 left-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--btn-primary-bg)] text-[var(--btn-primary-fg)]"
+                              >
+                                <Check className="h-3 w-3" strokeWidth={2.4} />
+                              </motion.span>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </button>
+
+                      <div className="px-1 pt-2">
+                        <div
+                          title={displayName}
+                          className="truncate text-[13px] font-medium tracking-[-0.01em] text-[var(--ink-primary)]"
+                        >
+                          {displayName}
+                        </div>
+                        <div className="mt-0.5 inline-flex items-baseline gap-1 text-[12px] text-[var(--ink-muted)] tabular-nums">
+                          <RollingNumber value={item.wearCount} />
+                          <span>
+                            {item.wearCount === 1 ? "wear" : "wears"}
+                          </span>
+                        </div>
                       </div>
-                      <div className="mt-0.5 text-[11px] text-[#6C6A64] tabular-nums">
-                        {item.price > 0
-                          ? `${formatPeso(cpw)}/wear`
-                          : `${item.wearCount} ${
-                              item.wearCount === 1 ? "wear" : "wears"
-                            }`}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
           )}
         </div>
