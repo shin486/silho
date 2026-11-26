@@ -3,35 +3,18 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Loader2 } from "lucide-react";
-import { useTheme } from "@/components/ThemeProvider";
 import { signIn, signUp } from "@/lib/auth-client";
 
 interface AuthFormProps {
   mode: "login" | "register";
 }
 
-const ARCHIVE_SPECS = [
-  {
-    label: "Archive",
-    detail: "Category-aware transparent garment cutouts",
-  },
-  {
-    label: "Telemetry",
-    detail: "Live cost-per-wear in PHP and 90-day unworn signals",
-  },
-  {
-    label: "Studio",
-    detail: "2-pass editorial try-on, Tailor Fit, and Layer Board",
-  },
-] as const;
-
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,17 +28,17 @@ export function AuthForm({ mode }: AuthFormProps) {
     const trimmedName = name.trim();
 
     if (isRegister && !trimmedName) {
-      setError("Enter your name to create your wardrobe.");
+      setError("Enter your name to start an archive");
       return;
     }
 
     if (!trimmedEmail || !password) {
-      setError("Enter both your email address and password.");
+      setError("Enter your email and password");
       return;
     }
 
     if (isRegister && password.length < 8) {
-      setError("Password must be at least 8 characters long.");
+      setError("Use at least 8 characters for your password");
       return;
     }
 
@@ -72,7 +55,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         if (response.error) {
           setError(
             response.error.message ||
-            "Could not create your account. Check your details and try again."
+              "Could not create archive — check your details"
           );
           setIsSubmitting(false);
           return;
@@ -85,8 +68,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         if (response.error) {
           setError(
-            response.error.message ||
-            "Invalid email or password. Check your credentials and try again."
+            response.error.message || "Email or password doesn't match"
           );
           setIsSubmitting(false);
           return;
@@ -96,111 +78,70 @@ export function AuthForm({ mode }: AuthFormProps) {
       router.push("/closet");
       router.refresh();
     } catch {
-      setError("Unable to reach the authentication service. Try again.");
+      setError("Couldn't reach the server — try again");
       setIsSubmitting(false);
     }
   }
 
-  return (
-    <main className="flex min-h-screen flex-col justify-between bg-[var(--bg-viewport)] text-[var(--ink-primary)] transition-colors duration-150">
-      {/* Minimal Studio Header */}
-      <header className="border-b border-[var(--border-hairline)] bg-[var(--bg-surface)]">
-        <div className="mx-auto flex h-[60px] max-w-[1200px] items-center justify-between px-5 sm:px-8">
-          <Link href="/" className="inline-flex items-center gap-2.5">
-            <span
-              aria-hidden="true"
-              className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ink-primary)]"
-            />
-            <span className="text-[16px] font-bold tracking-[-0.03em] text-[var(--ink-primary)]">
-              Silho
-            </span>
-          </Link>
+  const emailIndex = isRegister ? "02" : "01";
+  const passwordIndex = isRegister ? "03" : "02";
 
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={
-              theme === "dark"
-                ? "Switch to Light Studio theme"
-                : "Switch to Obsidian Dark theme"
-            }
-            className="inline-flex h-8 items-center gap-2 text-[10px] font-medium tracking-[0.16em] text-[var(--ink-muted)] uppercase transition-colors duration-150 hover:text-[var(--ink-primary)]"
+  return (
+    <main
+      style={{ colorScheme: "light" }}
+      className="flex min-h-dvh flex-col justify-between bg-[#FAFAFA] text-[#0A0A0A] selection:bg-[#0A0A0A] selection:text-[#FFFFFF]"
+    >
+      {/* Top Bar */}
+      <header className="border-b border-[#E5E5E5] bg-[#FFFFFF]">
+        <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-4 sm:px-8 lg:px-10">
+          <Link
+            href="/"
+            className="inline-flex h-9 items-center gap-2.5 focus-visible:outline-[1.5px] focus-visible:outline-offset-4 focus-visible:outline-[#0A0A0A]"
           >
             <span
               aria-hidden="true"
-              className={`inline-block h-2.5 w-2.5 rounded-full border border-[var(--ink-primary)] transition-colors duration-150 ${theme === "dark" ? "bg-[var(--ink-primary)]" : "bg-transparent"
-                }`}
+              className="h-[7px] w-[7px] shrink-0 bg-[#0A0A0A]"
             />
-            <span>{theme === "dark" ? "Obsidian" : "Studio"}</span>
-          </button>
+            <span className="text-[13px] font-medium tracking-[0.22em] text-[#0A0A0A]">
+              SILHO
+            </span>
+          </Link>
+
+          <span className="font-mono text-[12px] text-[#666666]">
+            Wardrobe archive
+          </span>
         </div>
       </header>
 
-      {/* Editorial Dual-Polarity Card (28px Radius) */}
-      <div className="mx-auto flex w-full max-w-[1080px] flex-1 items-center px-4 py-10 sm:px-8 lg:py-16">
-        <div className="grid w-full grid-cols-1 overflow-hidden rounded-[28px] border border-[var(--border-hairline)] bg-[var(--bg-surface)] lg:grid-cols-12">
-          {/* Left Matte Obsidian Band */}
-          <div className="flex flex-col justify-between bg-[#141415] p-8 text-[#F5F5F5] sm:p-11 lg:col-span-6 lg:p-12 dark:bg-[#1B1B1D]">
-            <div>
-              <div className="flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 rounded-full bg-[#F5F5F5]"
-                />
-                <span className="text-[10px] font-semibold tracking-[0.18em] text-[#8A8A8E] uppercase">
-                  Silho Studio
+      {/* Archival Hangtag + Desktop Ledger Specimen */}
+      <div className="mx-auto flex w-full max-w-[1200px] flex-1 items-start px-4 pt-6 pb-12 sm:px-8 sm:pt-12 lg:items-center lg:px-10 lg:py-16">
+        <div className="grid w-full grid-cols-1 lg:grid-cols-12 lg:items-start lg:gap-8">
+          <div className="mx-auto w-full max-w-[420px] lg:col-span-5 lg:col-start-2 lg:mx-0 lg:max-w-none">
+            <section
+              aria-labelledby="auth-heading"
+              className="border border-[#E5E5E5] bg-[#FFFFFF]"
+            >
+              <div className="flex items-baseline justify-between border-b border-[#E5E5E5] px-4 py-4 sm:px-5 sm:py-5">
+                <h1
+                  id="auth-heading"
+                  className="text-[24px] leading-[1.15] font-medium tracking-[-0.025em] text-[#0A0A0A] sm:text-[28px]"
+                >
+                  {isRegister ? "Start an archive" : "Sign in"}
+                </h1>
+                <span className="font-mono text-[12px] text-[#666666] tabular-nums">
+                  {isRegister ? "01–03" : "01–02"}
                 </span>
               </div>
-              <h1 className="mt-5 max-w-[12ch] text-[34px] leading-[1.04] font-bold tracking-[-0.035em] text-[#F5F5F5] sm:text-[42px]">
-                Your wardrobe, measured.
-              </h1>
-              <p className="mt-4 max-w-[36ch] text-[14px] leading-relaxed text-[#B8B8BC]">
-                Catalog every garment cutout, track cost per wear over time, and
-                preview fits inside a monochrome editorial studio.
-              </p>
-            </div>
 
-            <dl className="mt-12 divide-y divide-[#262629] border-t border-[#262629] lg:mt-16">
-              {ARCHIVE_SPECS.map((spec) => (
-                <div
-                  key={spec.label}
-                  className="grid grid-cols-12 gap-3 py-3.5 text-[12px]"
-                >
-                  <dt className="col-span-4 text-[10px] font-semibold tracking-[0.16em] text-[#F5F5F5] uppercase sm:col-span-3">
-                    {spec.label}
-                  </dt>
-                  <dd className="col-span-8 text-[#8A8A8E] sm:col-span-9">
-                    {spec.detail}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-
-          {/* Right Form Surface */}
-          <section className="flex flex-col justify-between bg-[var(--bg-surface)] p-8 sm:p-11 lg:col-span-6 lg:p-12">
-            <div>
-              <h2 className="text-[24px] font-bold tracking-[-0.03em] text-[var(--ink-primary)]">
-                {isRegister ? "Create account" : "Sign in"}
-              </h2>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--ink-muted)]">
-                {isRegister
-                  ? "Start your personal garment archive and wear telemetry."
-                  : "Access your closet archive, cost-per-wear metrics, and fit studio."}
-              </p>
-
-              <form
-                onSubmit={handleSubmit}
-                className="mt-8 space-y-5"
-                noValidate
-              >
+              <form onSubmit={handleSubmit} noValidate>
                 {isRegister && (
-                  <div>
+                  <div className="relative flex h-14 items-center border-b border-[#E5E5E5] bg-[#FFFFFF] transition-colors duration-150 focus-within:z-10 focus-within:shadow-[inset_0_0_0_1px_#0A0A0A]">
                     <label
                       htmlFor="auth-name"
-                      className="mb-2 block text-[10px] font-semibold tracking-[0.16em] text-[var(--ink-muted)] uppercase"
+                      className="flex h-full w-[116px] shrink-0 cursor-pointer items-center gap-2 border-r border-[#E5E5E5] px-3.5 font-mono text-[12px] font-normal text-[#0A0A0A] tabular-nums select-none sm:w-[128px] sm:px-4"
                     >
-                      Name
+                      <span className="text-[#666666]">01</span>
+                      <span>Name</span>
                     </label>
                     <input
                       id="auth-name"
@@ -209,66 +150,80 @@ export function AuthForm({ mode }: AuthFormProps) {
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Alex Rivera"
                       disabled={isSubmitting}
-                      className="h-11 w-full rounded-[12px] border border-[var(--border-hairline)] bg-[var(--bg-well)] px-4 text-[14px] text-[var(--ink-primary)] placeholder:text-[var(--ink-muted)] transition-colors duration-150 focus:border-[var(--ink-primary)] focus:bg-[var(--bg-surface)] disabled:opacity-50"
+                      className="silho-hangtag-input h-full min-w-0 flex-1 appearance-none rounded-none border-0 bg-transparent px-3.5 text-[16px] font-normal text-[#0A0A0A] caret-[#0A0A0A] focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-[#FAFAFA] disabled:text-[#666666] sm:px-4"
                     />
                   </div>
                 )}
 
-                <div>
+                <div className="relative flex h-14 items-center border-b border-[#E5E5E5] bg-[#FFFFFF] transition-colors duration-150 focus-within:z-10 focus-within:shadow-[inset_0_0_0_1px_#0A0A0A]">
                   <label
                     htmlFor="auth-email"
-                    className="mb-2 block text-[10px] font-semibold tracking-[0.16em] text-[var(--ink-muted)] uppercase"
+                    className="flex h-full w-[116px] shrink-0 cursor-pointer items-center gap-2 border-r border-[#E5E5E5] px-3.5 font-mono text-[12px] font-normal text-[#0A0A0A] tabular-nums select-none sm:w-[128px] sm:px-4"
                   >
-                    Email
+                    <span className="text-[#666666]">{emailIndex}</span>
+                    <span>Email</span>
                   </label>
                   <input
                     id="auth-email"
                     type="email"
                     autoComplete="email"
+                    inputMode="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@domain.com"
                     disabled={isSubmitting}
-                    className="h-11 w-full rounded-[12px] border border-[var(--border-hairline)] bg-[var(--bg-well)] px-4 text-[14px] text-[var(--ink-primary)] placeholder:text-[var(--ink-muted)] transition-colors duration-150 focus:border-[var(--ink-primary)] focus:bg-[var(--bg-surface)] disabled:opacity-50"
+                    className="silho-hangtag-input h-full min-w-0 flex-1 appearance-none rounded-none border-0 bg-transparent px-3.5 text-[16px] font-normal text-[#0A0A0A] caret-[#0A0A0A] focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-[#FAFAFA] disabled:text-[#666666] sm:px-4"
                   />
                 </div>
 
-                <div>
-                  <div className="mb-2 flex items-baseline justify-between">
-                    <label
-                      htmlFor="auth-password"
-                      className="block text-[10px] font-semibold tracking-[0.16em] text-[var(--ink-muted)] uppercase"
-                    >
-                      Password
-                    </label>
-                    {isRegister && (
-                      <span className="text-[11px] text-[var(--ink-muted)]">
-                        Min. 8 characters
-                      </span>
-                    )}
-                  </div>
+                <div className="relative flex h-14 items-center border-b border-[#E5E5E5] bg-[#FFFFFF] transition-colors duration-150 focus-within:z-10 focus-within:shadow-[inset_0_0_0_1px_#0A0A0A]">
+                  <label
+                    htmlFor="auth-password"
+                    className="flex h-full w-[116px] shrink-0 cursor-pointer items-center gap-2 border-r border-[#E5E5E5] px-3.5 font-mono text-[12px] font-normal text-[#0A0A0A] tabular-nums select-none sm:w-[128px] sm:px-4"
+                  >
+                    <span className="text-[#666666]">{passwordIndex}</span>
+                    <span>Password</span>
+                  </label>
                   <input
                     id="auth-password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     autoComplete={
                       isRegister ? "new-password" : "current-password"
                     }
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
                     disabled={isSubmitting}
-                    className="h-11 w-full rounded-[12px] border border-[var(--border-hairline)] bg-[var(--bg-well)] px-4 text-[14px] text-[var(--ink-primary)] placeholder:text-[var(--ink-muted)] transition-colors duration-150 focus:border-[var(--ink-primary)] focus:bg-[var(--bg-surface)] disabled:opacity-50"
+                    className="silho-hangtag-input h-full min-w-0 flex-1 appearance-none rounded-none border-0 bg-transparent px-3.5 text-[16px] font-normal text-[#0A0A0A] caret-[#0A0A0A] focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-[#FAFAFA] disabled:text-[#666666] sm:px-4"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    disabled={isSubmitting}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    className="h-full shrink-0 cursor-pointer border-l border-[#E5E5E5] px-3.5 font-mono text-[12px] font-normal text-[#666666] transition-colors duration-150 hover:text-[#0A0A0A] focus-visible:z-20 focus-visible:outline-[1.5px] focus-visible:outline-offset-[-2px] focus-visible:outline-[#0A0A0A] disabled:opacity-50 sm:px-4"
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </button>
                 </div>
+
+                {isRegister && (
+                  <div className="flex h-9 items-center justify-between border-b border-[#E5E5E5] bg-[#FAFAFA] px-3.5 font-mono text-[11px] text-[#666666] tabular-nums sm:px-4">
+                    <span>Requirement</span>
+                    <span>8 characters minimum</span>
+                  </div>
+                )}
 
                 {error && (
                   <div
                     role="alert"
-                    className="rounded-[12px] border border-[var(--status-danger-border)] bg-[var(--status-danger-bg)] px-4 py-3 text-[13px] leading-snug text-[var(--status-danger-ink)]"
+                    className="border-b border-[#D9B4B2] bg-[#FAF2F2] px-3.5 py-3 text-[13px] leading-snug text-[#8C1D18] sm:px-4"
                   >
                     {error}
                   </div>
@@ -277,48 +232,60 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="group mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-[var(--btn-primary-bg)] px-5 text-[11px] font-semibold tracking-[0.16em] text-[var(--btn-primary-fg)] uppercase transition-colors duration-150 hover:bg-[var(--btn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-busy={isSubmitting}
+                  className="flex h-14 w-full cursor-pointer items-center justify-center rounded-none bg-[#0A0A0A] px-5 text-[14px] font-medium tracking-[-0.01em] text-[#FFFFFF] transition-colors duration-150 hover:bg-[#1F1F1F] focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0A] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>
-                        {isRegister ? "Creating account…" : "Signing in…"}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span>{isRegister ? "Create account" : "Continue"}</span>
-                      <ArrowRight
-                        className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-0.5"
-                        strokeWidth={1.8}
-                      />
-                    </>
-                  )}
+                  {isSubmitting
+                    ? isRegister
+                      ? "Creating archive…"
+                      : "Opening archive…"
+                    : isRegister
+                      ? "Create archive"
+                      : "Open archive"}
                 </button>
               </form>
-            </div>
+            </section>
 
-            <footer className="mt-8 flex items-center justify-between border-t border-[var(--border-hairline)] pt-5 text-[13px] text-[var(--ink-muted)]">
-              <span>
-                {isRegister ? "Already have an account?" : "New to Silho?"}
+            <div className="mt-5 flex items-baseline justify-between text-[13px]">
+              <span className="text-[#666666]">
+                {isRegister ? "Have an archive" : "No archive yet"}
               </span>
               <Link
                 href={isRegister ? "/login" : "/register"}
-                className="text-[11px] font-semibold tracking-[0.14em] text-[var(--ink-primary)] uppercase underline underline-offset-4 transition-opacity hover:opacity-65"
+                className="font-mono text-[12px] font-medium text-[#0A0A0A] underline decoration-[#0A0A0A]/35 underline-offset-4 transition-colors duration-150 hover:decoration-[#0A0A0A] focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0A]"
               >
-                {isRegister ? "Sign in" : "Create account"}
+                {isRegister ? "Sign in" : "Start one"}
               </Link>
-            </footer>
-          </section>
+            </div>
+          </div>
+
+          {/* Desktop Cost-Per-Wear Ledger Specimen */}
+          <aside className="hidden lg:col-span-4 lg:col-start-8 lg:flex lg:flex-col lg:border-l lg:border-[#E5E5E5] lg:pt-4 lg:pl-8">
+            <p className="max-w-[30ch] text-[15px] leading-[1.6] font-normal text-[#0A0A0A]">
+              Catalog what you own, log each wear, and see what every garment
+              actually costs to keep.
+            </p>
+            <div className="mt-8 border-t border-[#E5E5E5] pt-4">
+              <p className="font-mono text-[13px] font-medium text-[#0A0A0A] tabular-nums">
+                ₱ 2,400 ÷ 18 wears = ₱ 133 / wear
+              </p>
+              <p className="mt-1 font-mono text-[11px] text-[#666666]">
+                Cost-per-wear ledger specimen
+              </p>
+            </div>
+          </aside>
         </div>
       </div>
 
-      {/* Quiet Footer */}
-      <footer className="border-t border-[var(--border-hairline)] bg-[var(--bg-surface)]">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-5 py-3.5 text-[10px] font-medium tracking-[0.16em] text-[var(--ink-muted)] uppercase sm:px-8">
-          <span>Silho Wardrobe OS</span>
-          <span>PHP · Cost-Per-Wear Telemetry</span>
+      {/* Single Colophon Footer */}
+      <footer className="border-t border-[#E5E5E5] bg-[#FFFFFF]">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-4 py-3.5 font-mono text-[11px] text-[#666666] tabular-nums sm:px-8 lg:px-10">
+          <span>SILHO — Wardrobe ledger and fit studio</span>
+          <div className="flex items-center gap-3">
+            <span>₱ PHP</span>
+            <span aria-hidden="true" className="h-3 w-px bg-[#E5E5E5]" />
+            <span>v0.1.0</span>
+          </div>
         </div>
       </footer>
     </main>

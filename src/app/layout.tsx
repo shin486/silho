@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { IBM_Plex_Mono, Inter } from "next/font/google";
 import { OpeningAnimation } from "@/components/OpeningAnimation";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ViewTransitionProvider } from "@/components/ViewTransitionProvider";
@@ -9,6 +9,13 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  variable: "--font-ibm-plex-mono",
 });
 
 export const metadata: Metadata = {
@@ -24,7 +31,7 @@ export const viewport: Viewport = {
   themeColor: "#ECECEB",
 };
 
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('silho-theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark';var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute('content','#1E2022');}}}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{var p=location.pathname;if(p==='/login'||p==='/register'){document.documentElement.removeAttribute('data-theme');document.documentElement.style.colorScheme='light';return;}var t=localStorage.getItem('silho-theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');document.documentElement.style.colorScheme='dark';var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute('content','#1E2022');}}}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -32,7 +39,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${inter.variable} ${ibmPlexMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

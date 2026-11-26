@@ -5,6 +5,8 @@
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
 }
 
 :root {
@@ -177,4 +179,13 @@
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.silho-hangtag-input:-webkit-autofill,
+.silho-hangtag-input:-webkit-autofill:hover,
+.silho-hangtag-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: #0a0a0a;
+  caret-color: #0a0a0a;
+  transition: background-color 9999s ease-out 0s;
 }

@@ -40,12 +40,18 @@ typography:
     fontWeight: 400
     lineHeight: 1.55
     letterSpacing: "0em"
+  mono:
+    fontFamily: "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+    fontSize: "0.75rem"
+    fontWeight: 400
+    lineHeight: 1.35
+    letterSpacing: "0em"
   label:
-    fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-    fontSize: "0.6875rem"
-    fontWeight: 500
-    lineHeight: 1.2
-    letterSpacing: "0.12em"
+    fontFamily: "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+    fontSize: "0.75rem"
+    fontWeight: 400
+    lineHeight: 1.35
+    letterSpacing: "0em"
 rounded:
   none: "0px"
 spacing:
@@ -82,8 +88,8 @@ components:
     backgroundColor: "{colors.chalk-white}"
     textColor: "{colors.sumi-ink}"
     rounded: "{rounded.none}"
-    height: "44px"
-    padding: "0 14px"
+    height: "56px"
+    padding: "0 16px"
   catalog-tile:
     backgroundColor: "{colors.chalk-white}"
     textColor: "{colors.sumi-ink}"
@@ -134,23 +140,26 @@ A strictly monochrome warm-stone palette where tonal temperature and crisp ink c
 
 **Display Font:** Inter (with system sans-serif fallback, OpenType features `"cv02", "cv03", "cv04", "cv11"`)
 **Body Font:** Inter (with system sans-serif fallback)
-**Label/Mono Font:** Inter with `font-variant-numeric: tabular-nums`
+**Label / Mono Font:** IBM Plex Mono (`400`, `500`) with `font-variant-numeric: tabular-nums`
 
-**Character:** A single geometric workhorse grotesque carried across four deliberate registers—tightly-tracked bold numerals paired with widely-tracked uppercase hangtag micro-labels create unmistakable editorial tension without needing a decorative display face.
+**Character:** A geometric workhorse grotesque paired with IBM Plex Mono for field indexes, sentence-case micro-labels, tabular numerals, and ledger equations—creating quiet Swiss-Japanese archival discipline without uppercase tracking clichés or decorative display faces.
 
 ### Hierarchy
-- **Display** (`500`, `30px–38px`, `1.08` line-height, `-0.035em` tracking): Auth editorial headline (`Your wardrobe, measured.`).
+- **Display / Auth Heading** (`500`, `24px–28px`, `1.15` line-height, `-0.025em` tracking): Ruled hangtag headers (`Sign in`, `Start an archive`).
 - **Headline / Ledger Figure** (`600`, `20px–26px`, `1.0` line-height, `-0.03em` tracking, `tabular-nums`): Archive ledger KPIs (`Total Archive`, `Avg. Cost / Wear`, `Logged Wears`, `Unworn 90d+`) and prominent card CPW figures (`15px–17px`).
 - **Title** (`500`, `13px–16px`, `1.35` line-height, `-0.01em` tracking): Garment titles, modal headers, and panel section names.
-- **Body** (`400`, `13px–14px`, `1.55` line-height, `65–75ch` max prose measure): Explanatory copy, empty-state guidance, and form inputs.
-- **Label / Spec** (`500`–`600`, `10px–11px`, `1.2` line-height, `0.10em–0.14em` tracking, uppercase): Category stamps, ledger metric captions, model spec lines, and form field labels.
+- **Body** (`400`, `13px–16px`, `1.55` line-height, `65–75ch` max prose measure): Explanatory copy, empty-state guidance, and `16px` touch-safe form inputs.
+- **Label / Spec (Mono)** (`400`–`500`, `11px–12px`, `1.35` line-height, `0em` tracking, `tabular-nums`, sentence case): Hangtag row indexes (`01`, `02`, `03`), sentence-case field labels (`Name`, `Email`, `Password`), inline controls (`Show`/`Hide`), ledger specimen equations, and colophon metadata.
 
 ### Named Rules
-**The Tabular Ledger Rule.** Every currency amount (`₱`), wear count, dimension (`cm`/`kg`), and percentage uses `tabular-nums` so numbers align cleanly across grids and never jitter during optimistic wear updates.
+**The Tabular Ledger Rule.** Every currency amount (`₱`), wear count, dimension (`cm`/`kg`), row index, and percentage uses `tabular-nums` so numbers align cleanly across grids and never jitter during optimistic wear updates.
 
 ## Layout
 
-SILHO uses a `1440px` centered maximum container (`1200px` on Auth) with responsive horizontal gutters (`16px` mobile, `24px` tablet, `40px` desktop). Routine app navigation sits in a sticky `60px` top bar, followed by full-width hairline-bordered ledger or mode strips on pure Chalk White (`chalk-white`) so working content sits immediately below with zero wasted hero padding.
+SILHO uses a `1440px` centered maximum container (`1200px` on Auth) with responsive horizontal gutters (`16px` mobile, `24px`–`32px` tablet, `40px` desktop). Routine app navigation sits in a sticky `60px` top bar, followed by full-width hairline-bordered ledger or mode strips on pure Chalk White (`chalk-white`) so working content sits immediately below with zero wasted hero padding.
+
+### Auth Surface (`/login` & `/register` — Light-Only Archival Slip)
+Authentication routes stay strictly light-only (`#FAFAFA` paper ground, `#FFFFFF` ruled slip, `#0A0A0A` carbon ink, `#666666` muted graphite, `#E5E5E5` `1px` hairlines) with no theme toggle, keeping the first `56px` input row immediately accessible near the top of mobile viewports. On desktop (`>= 1024px`), a 12-column editorial grid anchors the 420px Hangtag slip on columns 2–6 beside a quiet left-ruled cost-per-wear equation (`₱ 2,400 ÷ 18 wears = ₱ 133 / wear`) on columns 8–11.
 
 Catalog galleries (`Closet`, `Lookbook`, and `Canvas` garment pickers) use a **shared 1px hairline grid**: the container draws `border-top` and `border-left` (`stone-hairline`), and each tile draws `border-right` and `border-bottom`. This guarantees crisp single-pixel architectural seams across all columns without doubled borders or gray empty cells on partial final rows. On mobile (`< 640px`), Closet and Lookbook switch to a 2-column lookbook grid (`grid-cols-2`) and horizontal category/mode tabs scroll smoothly in a single row without wrapping.
 
@@ -185,9 +194,10 @@ Every interactive component shares sharp 0px geometry, crisp 1px hairline border
 - **Selection (Studio Pickers):** Selected garments highlight via an overlaid `1.5px` Sumi Ink frame (`pointer-events-none absolute inset-0 border-[1.5px]`) painting cleanly above opaque image wells, paired with a top-right solid Sumi Ink slot badge (`UPPER` / `LOWER` / `STYLED`).
 
 ### Inputs / Fields
-- **Style:** `44px` (`h-11`) tall Chalk White fields with `1px` Stone Hairline borders, `0px` radius, and `14px` Sumi Ink text beneath `11px` uppercase tracked labels.
-- **Focus:** Border shifts crisply to Sumi Ink (`sumi-ink`) with a `1.5px` Sumi Ink `:focus-visible` outline (`2px` offset) and Sumi Ink text caret.
-- **Error / Disabled:** Validation errors display in dedicated `role="alert"` banners (`danger-bg` / `danger-border` / `danger-ink`); disabled fields step down to Alabaster Paper (`alabaster-paper`).
+- **Auth Hangtag Rows:** Flush `56px` (`h-14`) ruled rows inside a `#FFFFFF` `1px` `#E5E5E5` container (`0px` radius). Each row pairs a fixed `116px`–`128px` right-ruled `IBM Plex Mono` index and sentence-case label cell (`01 Email`, `02 Password` on sign-in; `01 Name`, `02 Email`, `03 Password` on register) with a borderless `16px` `Inter` input cell (zero placeholders), inline `Show`/`Hide` mono password toggle, and a full-width `56px` solid `#0A0A0A` submit row.
+- **Standard Studio Inputs:** `44px` (`h-11`) tall Chalk White fields with `1px` Stone Hairline borders, `0px` radius, and `14px` Sumi Ink text.
+- **Focus:** Auth hangtag rows apply a crisp `1px` inset `#0A0A0A` focus frame (`focus-within:shadow-[inset_0_0_0_1px_#0A0A0A]`) with zero layout shift and `#0A0A0A` text caret; standard fields shift border to Sumi Ink with a `1.5px` `:focus-visible` outline (`2px` offset).
+- **Error / Disabled:** Validation errors display in dedicated `role="alert"` banners (`danger-bg` / `danger-border` / `danger-ink`); disabled fields step down to `#FAFAFA`.
 
 ### Opening Wordmark (`OpeningAnimation` + `StrokeText`)
 - Full-viewport `100dvh` Alabaster Paper (`alabaster-paper`) opening veil drawing `SILHO` in Sumi Ink hairline strokes (`Inter` 500) followed by a left-to-right ink wipe and synchronized `1px` architectural hairline rule. Scale, stroke weight, tracking, and duration adapt across six screen profiles (compact mobile through ultrawide and short landscape) with a `44×44px` bottom-safe `Skip` control, `Escape` dismissal, and calm opacity-only `prefers-reduced-motion` path.

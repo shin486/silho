@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
 
 export type StudioTheme = "light" | "dark";
 
@@ -42,37 +43,47 @@ function applyThemeToDocument(theme: StudioTheme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isAuthRoute = pathname === "/login" || pathname === "/register";
   const [theme, setThemeState] = useState<StudioTheme>("light");
 
   useEffect(() => {
+    let resolved: StudioTheme = "light";
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved === "dark" || saved === "light") {
-        setThemeState(saved);
-        applyThemeToDocument(saved);
-        return;
+        resolved = saved;
+      } else if (
+        document.documentElement.getAttribute("data-theme") === "dark"
+      ) {
+        resolved = "dark";
       }
     } catch {
-      // Ignore storage access errors in restricted browsing contexts.
+      if (document.documentElement.getAttribute("data-theme") === "dark") {
+        resolved = "dark";
+      }
     }
-    const attr = document.documentElement.getAttribute("data-theme");
-    setThemeState(attr === "dark" ? "dark" : "light");
-  }, []);
+    setThemeState(resolved);
+    applyThemeToDocument(isAuthRoute ? "light" : resolved);
+  }, [isAuthRoute]);
 
-  const setTheme = useCallback((next: StudioTheme) => {
-    setThemeState(next);
-    applyThemeToDocument(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // Ignore storage write errors.
-    }
-  }, []);
+  const setTheme = useCallback(
+    (next: StudioTheme) => {
+      setThemeState(next);
+      applyThemeToDocument(isAuthRoute ? "light" : next);
+      try {
+        window.localStorage.setItem(STORAGE_KEY, next);
+      } catch {
+        // Ignore storage write errors.
+      }
+    },
+    [isAuthRoute]
+  );
 
   const toggleTheme = useCallback(() => {
     setThemeState((prev) => {
       const next: StudioTheme = prev === "dark" ? "light" : "dark";
-      applyThemeToDocument(next);
+      applyThemeToDocument(isAuthRoute ? "light" : next);
       try {
         window.localStorage.setItem(STORAGE_KEY, next);
       } catch {
@@ -80,7 +91,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       }
       return next;
     });
-  }, []);
+  }, [isAuthRoute]);
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
